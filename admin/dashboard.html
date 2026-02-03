@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم - الأمير</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: #0a0a0a;
+            color: #f3f4f6;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: #111;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
+        }
+
+        .logo {
+            color: #fbbf24;
+            font-size: 1.5rem;
+            font-weight: 900;
+        }
+
+        .btn-logout {
+            background: #dc2626;
+            color: white;
+            padding: 0.5rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 600;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .section-title {
+            color: #fbbf24;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card {
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border: 1px solid #333;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #9ca3af;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 0.75rem;
+            background: #0a0a0a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: white;
+            font-family: inherit;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #fbbf24;
+        }
+
+        .btn-add {
+            background: #fbbf24;
+            color: #000;
+            padding: 0.75rem 2rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-add:hover {
+            background: #f59e0b;
+        }
+
+        .items-list {
+            margin-top: 1.5rem;
+        }
+
+        .item {
+            background: #0d0d0d;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #222;
+        }
+
+        .item-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .item-thumb {
+            width: 80px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 6px;
+            background: #333;
+        }
+
+        .btn-delete {
+            background: #dc2626;
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 0.75rem 1.5rem;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            cursor: pointer;
+            color: #9ca3af;
+            font-family: inherit;
+        }
+
+        .tab.active {
+            background: #fbbf24;
+            color: #000;
+            border-color: #fbbf24;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .success-msg {
+            background: #065f46;
+            color: #10b981;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="header">
+        <div class="logo">🎬 لوحة التحكم</div>
+        <button class="btn-logout" onclick="logout()">تسجيل الخروج</button>
+    </header>
+
+    <div class="container">
+        <div class="success-msg" id="success-msg">تمت العملية بنجاح!</div>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="motionGraphics">موشن جرافيك</button>
+            <button class="tab" data-tab="reels">ريلز</button>
+            <button class="tab" data-tab="graphicDesign">تصميم جرافيك</button>
+            <button class="tab" data-tab="thumbnails">صور مصغرة</button>
+            <button class="tab" data-tab="webDesign">مواقع وتطبيقات</button>
+        </div>
+
+        <!-- Motion Graphics -->
+        <div class="tab-content active" id="motionGraphics">
+            <div class="card">
+                <h2 class="section-title"><i class="fa-solid fa-video"></i> إضافة موشن جرافيك</h2>
+                <form id="form-motionGraphics">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>العنوان</label>
+                            <input type="text" name="title" placeholder="عنوان الفيديو" required>
+                        </div>
+                        <div class="form-group">
+                            <label>YouTube ID</label>
+                            <input type="text" name="youtubeId" placeholder="مثال: dQw4w9WgXcQ" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-add"><i class="fa-solid fa-plus"></i> إضافة</button>
+                </form>
+                <div class="items-list" id="list-motionGraphics"></div>
+            </div>
+        </div>
+
+        <!-- Reels -->
+        <div class="tab-content" id="reels">
+            <div class="card">
+                <h2 class="section-title"><i class="fa-solid fa-film"></i> إضافة ريلز</h2>
+                <form id="form-reels">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>العنوان</label>
+                            <input type="text" name="title" placeholder="عنوان الريلز" required>
+                        </div>
+                        <div class="form-group">
+                            <label>YouTube ID</label>
+                            <input type="text" name="youtubeId" placeholder="مثال: dQw4w9WgXcQ" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-add"><i class="fa-solid fa-plus"></i> إضافة</button>
+                </form>
+                <div class="items-list" id="list-reels"></div>
+            </div>
+        </div>
+
+        <!-- Graphic Design -->
+        <div class="tab-content" id="graphicDesign">
+            <div class="card">
+                <h2 class="section-title"><i class="fa-solid fa-palette"></i> إضافة تصميم جرافيك</h2>
+                <form id="form-graphicDesign">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>العنوان</label>
+                            <input type="text" name="title" placeholder="عنوان التصميم" required>
+                        </div>
+                        <div class="form-group">
+                            <label>رابط الصورة</label>
+                            <input type="url" name="imageUrl" placeholder="https://example.com/image.jpg" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-add"><i class="fa-solid fa-plus"></i> إضافة</button>
+                </form>
+                <div class="items-list" id="list-graphicDesign"></div>
+            </div>
+        </div>
+
+        <!-- Thumbnails -->
+        <div class="tab-content" id="thumbnails">
+            <div class="card">
+                <h2 class="section-title"><i class="fa-solid fa-image"></i> إضافة صورة مصغرة</h2>
+                <form id="form-thumbnails">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>العنوان</label>
+                            <input type="text" name="title" placeholder="عنوان الصورة" required>
+                        </div>
+                        <div class="form-group">
+                            <label>رابط الصورة</label>
+                            <input type="url" name="imageUrl" placeholder="https://example.com/image.jpg" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-add"><i class="fa-solid fa-plus"></i> إضافة</button>
+                </form>
+                <div class="items-list" id="list-thumbnails"></div>
+            </div>
+        </div>
+
+        <!-- Web Design -->
+        <div class="tab-content" id="webDesign">
+            <div class="card">
+                <h2 class="section-title"><i class="fa-solid fa-laptop"></i> إضافة موقع/تطبيق</h2>
+                <form id="form-webDesign">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>العنوان</label>
+                            <input type="text" name="title" placeholder="اسم الموقع/التطبيق" required>
+                        </div>
+                        <div class="form-group">
+                            <label>رابط الصورة</label>
+                            <input type="url" name="imageUrl" placeholder="https://example.com/image.jpg" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-add"><i class="fa-solid fa-plus"></i> إضافة</button>
+                </form>
+                <div class="items-list" id="list-webDesign"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const categories = ['motionGraphics', 'reels', 'graphicDesign', 'thumbnails', 'webDesign'];
+
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab).classList.add('active');
+            });
+        });
+
+        // Load all content
+        async function loadContent() {
+            try {
+                const response = await fetch('/api/content');
+                const data = await response.json();
+
+                categories.forEach(category => {
+                    const list = document.getElementById(`list-${category}`);
+                    if (list && data[category]) {
+                        list.innerHTML = data[category].map(item => `
+                            <div class="item">
+                                <div class="item-info">
+                                    ${item.imageUrl ? `<img src="${item.imageUrl}" class="item-thumb">` :
+                                item.youtubeId ? `<img src="https://img.youtube.com/vi/${item.youtubeId}/mqdefault.jpg" class="item-thumb">` : ''}
+                                    <span>${item.title}</span>
+                                </div>
+                                <button class="btn-delete" onclick="deleteItem('${category}', ${item.id})">
+                                    <i class="fa-solid fa-trash"></i> حذف
+                                </button>
+                            </div>
+                        `).join('');
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading content:', error);
+            }
+        }
+
+        // Add item
+        categories.forEach(category => {
+            const form = document.getElementById(`form-${category}`);
+            if (form) {
+                form.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const formData = new FormData(form);
+                    const data = Object.fromEntries(formData);
+
+                    try {
+                        const response = await fetch(`/api/content/${category}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(data)
+                        });
+
+                        if (response.ok) {
+                            showSuccess();
+                            form.reset();
+                            loadContent();
+                        }
+                    } catch (error) {
+                        console.error('Error adding item:', error);
+                    }
+                });
+            }
+        });
+
+        // Delete item
+        async function deleteItem(category, id) {
+            if (!confirm('هل أنت متأكد من الحذف؟')) return;
+
+            try {
+                const response = await fetch(`/api/content/${category}/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    showSuccess();
+                    loadContent();
+                }
+            } catch (error) {
+                console.error('Error deleting item:', error);
+            }
+        }
+
+        // Show success message
+        function showSuccess() {
+            const msg = document.getElementById('success-msg');
+            msg.style.display = 'block';
+            setTimeout(() => msg.style.display = 'none', 3000);
+        }
+
+        // Logout
+        function logout() {
+            window.location.href = '/api/logout';
+        }
+
+        // Initial load
+        loadContent();
+    </script>
+</body>
+
+</html>
