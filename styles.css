@@ -76,13 +76,17 @@ ul {
 }
 
 @media (max-width: 767px) {
+    .header {
+        padding: 0.5rem 0;
+    }
+
     .logo {
-        font-size: 0.9rem;
+        font-size: 0.75rem;
     }
 
     .logo-icon {
-        width: 35px;
-        height: 35px;
+        width: 28px;
+        height: 28px;
     }
 
     .header .btn {
@@ -91,11 +95,11 @@ ul {
     }
 
     .hero {
-        padding-top: 80px;
+        padding-top: 60px;
     }
 
     .brand-name {
-        margin-top: 1rem;
+        margin-top: 0.5rem;
     }
 }
 
