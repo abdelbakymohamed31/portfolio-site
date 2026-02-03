@@ -85,9 +85,17 @@ ul {
         height: 50px;
     }
 
-    .btn {
+    .header .btn {
         padding: 0.4rem 1rem;
         font-size: 0.85rem;
+    }
+
+    .hero {
+        padding-top: 100px;
+    }
+
+    .brand-name {
+        margin-top: 1rem;
     }
 }
 
