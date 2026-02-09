@@ -21,10 +21,11 @@ async function loadContentFromAPI() {
         const response = await fetch('/api/content');
         const data = await response.json();
 
-        // Load Reels
+        // Load Reels (Carousel - reverse to show newest first)
         const reelsContainer = document.getElementById('reels-container');
         if (reelsContainer && data.reels) {
-            reelsContainer.innerHTML = data.reels.map(item => `
+            const reversedReels = [...data.reels].reverse();
+            reelsContainer.innerHTML = reversedReels.map(item => `
                 <div class="card reel-card" onclick="window.open('https://www.youtube.com/shorts/${item.youtubeId}', '_blank')">
                     <div class="card-image placeholder-vertical" style="background-image: url('https://img.youtube.com/vi/${item.youtubeId}/maxresdefault.jpg'); background-size: cover; background-position: center;">
                         <div class="play-overlay"><i class="fa-solid fa-play"></i></div>
@@ -34,10 +35,11 @@ async function loadContentFromAPI() {
             `).join('');
         }
 
-        // Load Motion Graphics
+        // Load Motion Graphics (Carousel - reverse to show newest first)
         const motionContainer = document.getElementById('motion-container');
         if (motionContainer && data.motionGraphics) {
-            motionContainer.innerHTML = data.motionGraphics.map((item, i) => `
+            const reversedMotion = [...data.motionGraphics].reverse();
+            motionContainer.innerHTML = reversedMotion.map((item, i) => `
                 <div class="card motion-card">
                     <div class="card-video">
                         <iframe id="yt-video-${i}" src="https://www.youtube.com/embed/${item.youtubeId}?enablejsapi=1"
@@ -45,44 +47,81 @@ async function loadContentFromAPI() {
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                             allowfullscreen></iframe>
                     </div>
+                    <div class="motion-card-title">${item.title}</div>
                 </div>
             `).join('');
         }
 
-        // Load Graphic Design
+        // Load Graphic Design (Carousel - reverse to show newest first)
         const designContainer = document.getElementById('design-container');
         if (designContainer && data.graphicDesign) {
-            designContainer.innerHTML = data.graphicDesign.map(item => `
-                <div class="design-card">
+            const reversedDesign = [...data.graphicDesign].reverse();
+            designContainer.innerHTML = reversedDesign.map(item => `
+                <div class="design-card carousel-card">
                     <img src="${item.imageUrl}" alt="${item.title}">
+                    <div class="carousel-card-title">${item.title}</div>
                 </div>
             `).join('');
         }
 
-        // Load Thumbnails
+        // Load Thumbnails (Carousel - reverse to show newest first)
         const thumbContainer = document.getElementById('thumbnails-container');
         if (thumbContainer && data.thumbnails) {
-            thumbContainer.innerHTML = data.thumbnails.map(item => `
-                <div class="thumbnail-card">
+            const reversedThumbs = [...data.thumbnails].reverse();
+            thumbContainer.innerHTML = reversedThumbs.map(item => `
+                <div class="thumbnail-card carousel-card">
                     <img src="${item.imageUrl}" alt="${item.title}">
                 </div>
             `).join('');
         }
 
-        // Load Web Design
+        // Load Web Design (Carousel - reverse to show newest first)
         const webContainer = document.getElementById('web-container');
         if (webContainer && data.webDesign) {
-            webContainer.innerHTML = data.webDesign.map(item => `
-                <div class="web-card">
+            const reversedWeb = [...data.webDesign].reverse();
+            webContainer.innerHTML = reversedWeb.map(item => `
+                <div class="web-card carousel-card">
                     <img src="${item.imageUrl}" alt="${item.title}">
                     <div class="web-card-title">${item.title}</div>
                 </div>
             `).join('');
         }
 
+        // Setup all carousel navigations
+        setupAllCarousels();
+
     } catch (error) {
         console.error('Error loading content:', error);
     }
+}
+
+// Setup all Carousel Navigations
+function setupAllCarousels() {
+    const carousels = [
+        { container: 'reels-container', prev: 'reels-prev', next: 'reels-next', cardWidth: 180 },
+        { container: 'motion-container', prev: 'motion-prev', next: 'motion-next', cardWidth: 350 },
+        { container: 'design-container', prev: 'design-prev', next: 'design-next', cardWidth: 280 },
+        { container: 'thumbnails-container', prev: 'thumbnails-prev', next: 'thumbnails-next', cardWidth: 320 },
+        { container: 'web-container', prev: 'web-prev', next: 'web-next', cardWidth: 280 }
+    ];
+
+    carousels.forEach(({ container, prev, next, cardWidth }) => {
+        const containerEl = document.getElementById(container);
+        const prevBtn = document.getElementById(prev);
+        const nextBtn = document.getElementById(next);
+
+        if (!containerEl || !prevBtn || !nextBtn) return;
+
+        const scrollAmount = cardWidth + 24; // card width + gap
+
+        prevBtn.addEventListener('click', () => {
+            containerEl.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        });
+
+        nextBtn.addEventListener('click', () => {
+            containerEl.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+        });
+    });
 }
 
 function setupScrollReveal() {

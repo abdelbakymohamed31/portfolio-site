@@ -384,6 +384,15 @@ ul {
     box-shadow: 0 15px 40px rgba(251, 191, 36, 0.2);
 }
 
+.motion-card-title {
+    padding: 0.75rem 1rem;
+    background: var(--surface-color);
+    color: var(--text-color);
+    font-weight: 600;
+    text-align: center;
+    font-size: 0.9rem;
+}
+
 .card-video {
     position: relative;
     padding-bottom: 56.25%;
@@ -798,6 +807,140 @@ ul {
     transform: translateY(-3px);
     box-shadow: 0 15px 40px rgba(251, 191, 36, 0.5);
     background: #f59e0b;
+}
+
+/* Carousel Styles */
+.carousel-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.carousel-container {
+    display: flex;
+    gap: 1.5rem;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    padding: 1rem 0;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    flex: 1;
+}
+
+.carousel-container::-webkit-scrollbar {
+    display: none;
+}
+
+.carousel-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--accent-color);
+    color: #000;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    z-index: 10;
+    transition: all 0.3s;
+    box-shadow: 0 4px 15px rgba(251, 191, 36, 0.4);
+}
+
+.carousel-arrow:hover {
+    transform: translateY(-50%) scale(1.1);
+    box-shadow: 0 6px 20px rgba(251, 191, 36, 0.6);
+}
+
+.carousel-prev {
+    right: -25px;
+}
+
+.carousel-next {
+    left: -25px;
+}
+
+@media (max-width: 768px) {
+    .carousel-arrow {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+
+    .carousel-prev {
+        right: -10px;
+    }
+
+    .carousel-next {
+        left: -10px;
+    }
+}
+
+.carousel-container .motion-card {
+    flex: 0 0 350px;
+    min-width: 350px;
+}
+
+/* Reels carousel cards */
+.carousel-vertical .reel-card {
+    flex: 0 0 180px;
+    min-width: 180px;
+}
+
+/* Design carousel cards */
+.carousel-container .design-card {
+    flex: 0 0 280px;
+    min-width: 280px;
+}
+
+/* Thumbnails carousel cards */
+.carousel-container .thumbnail-card {
+    flex: 0 0 320px;
+    min-width: 320px;
+}
+
+/* Web carousel cards */
+.carousel-container .web-card {
+    flex: 0 0 280px;
+    min-width: 280px;
+}
+
+/* Carousel card title */
+.carousel-card-title {
+    padding: 0.75rem 1rem;
+    background: var(--surface-color);
+    color: var(--text-color);
+    font-weight: 600;
+    text-align: center;
+    font-size: 0.85rem;
+}
+
+@media (max-width: 768px) {
+    .carousel-container .motion-card {
+        flex: 0 0 280px;
+        min-width: 280px;
+    }
+
+    .carousel-vertical .reel-card {
+        flex: 0 0 150px;
+        min-width: 150px;
+    }
+
+    .carousel-container .design-card,
+    .carousel-container .web-card {
+        flex: 0 0 220px;
+        min-width: 220px;
+    }
+
+    .carousel-container .thumbnail-card {
+        flex: 0 0 260px;
+        min-width: 260px;
+    }
 }
 
 @media (min-width: 768px) {
