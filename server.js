@@ -34,6 +34,33 @@ function writeData(data) {
     fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
 }
 
+// Extract YouTube video ID from various URL formats
+function extractYouTubeId(input) {
+    if (!input) return input;
+    input = input.trim();
+
+    // If it's already just an ID (no slashes, no dots), return as-is
+    if (/^[a-zA-Z0-9_-]{11}$/.test(input)) {
+        return input;
+    }
+
+    // Try to extract from various YouTube URL formats
+    const patterns = [
+        /(?:youtube\.com\/watch\?.*v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
+        /^([a-zA-Z0-9_-]{11})$/
+    ];
+
+    for (const pattern of patterns) {
+        const match = input.match(pattern);
+        if (match && match[1]) {
+            return match[1];
+        }
+    }
+
+    // If no pattern matched, return the original (user might have entered something custom)
+    return input;
+}
+
 // Auth middleware
 function requireAuth(req, res, next) {
     if (req.session && req.session.isAdmin) {
@@ -111,6 +138,11 @@ app.post('/api/content/:category', requireAuth, (req, res) => {
         id: Date.now(),
         ...req.body
     };
+
+    // Extract YouTube ID from URL if full URL was provided
+    if (newItem.youtubeId) {
+        newItem.youtubeId = extractYouTubeId(newItem.youtubeId);
+    }
 
     data[category].push(newItem);
     writeData(data);
