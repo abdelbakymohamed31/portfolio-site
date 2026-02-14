@@ -232,8 +232,8 @@
                         </div>
                         <div class="form-group">
                             <label>YouTube ID</label>
-                            <input type="text" name="youtubeId"
-                                placeholder="الرابط أو الـ ID مثال: https://youtu.be/xxxxx" required>
+                            <input type="text" name="youtubeId" placeholder="YouTube ID أو رابط الفيديو الكامل"
+                                required>
                         </div>
                     </div>
                     <button type="submit" class="btn-add"><i class="fa-solid fa-plus"></i> إضافة</button>
@@ -254,8 +254,8 @@
                         </div>
                         <div class="form-group">
                             <label>YouTube ID</label>
-                            <input type="text" name="youtubeId"
-                                placeholder="الرابط أو الـ ID مثال: https://youtu.be/xxxxx" required>
+                            <input type="text" name="youtubeId" placeholder="YouTube ID أو رابط الفيديو الكامل"
+                                required>
                         </div>
                     </div>
                     <button type="submit" class="btn-add"><i class="fa-solid fa-plus"></i> إضافة</button>
@@ -369,6 +369,28 @@
             }
         }
 
+        // Extract YouTube ID from any URL format
+        function extractYouTubeId(input) {
+            if (!input) return input;
+            // Already a plain ID (no slashes or dots)
+            if (/^[a-zA-Z0-9_-]{11}$/.test(input.trim())) {
+                return input.trim();
+            }
+            // Match various YouTube URL formats
+            const patterns = [
+                /(?:youtube\.com\/watch\?v=|youtube\.com\/embed\/|youtube\.com\/v\/|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
+                /^.*(?:youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/
+            ];
+            for (const pattern of patterns) {
+                const match = input.match(pattern);
+                if (match && match[1]) {
+                    return match[1];
+                }
+            }
+            // Return as-is if no pattern matched
+            return input.trim();
+        }
+
         // Add item
         categories.forEach(category => {
             const form = document.getElementById(`form-${category}`);
@@ -377,6 +399,11 @@
                     e.preventDefault();
                     const formData = new FormData(form);
                     const data = Object.fromEntries(formData);
+
+                    // Auto-extract YouTube ID if the field exists
+                    if (data.youtubeId) {
+                        data.youtubeId = extractYouTubeId(data.youtubeId);
+                    }
 
                     try {
                         const response = await fetch(`/api/content/${category}`, {
