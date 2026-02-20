@@ -20,7 +20,17 @@ const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } }); // 1
 
 const app = express();
 const PORT = 3000;
-const DATA_FILE = path.join(__dirname, 'data', 'content.json');
+const DATA_DIR = path.join(__dirname, 'data');
+const DATA_FILE = path.join(DATA_DIR, 'content.json');
+
+// Ensure data directory and file exist on startup
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
+if (!fs.existsSync(DATA_FILE)) {
+    fs.writeFileSync(DATA_FILE, JSON.stringify({
+        admin: { username: 'admin', password: 'mustafa2024' },
+        reels: [], motionGraphics: [], graphicDesign: [], thumbnails: [], webDesign: []
+    }, null, 2));
+}
 
 // Middleware
 app.use(cors());
@@ -46,6 +56,7 @@ function readData() {
 }
 
 function writeData(data) {
+    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
     fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
 }
 
