@@ -21,16 +21,19 @@ async function loadContentFromAPI() {
         const response = await fetch('/api/content');
         const data = await response.json();
 
-        // Load Reels (Carousel - reverse to show newest first)
+        // Load Montage (Carousel - reverse to show newest first)
         const reelsContainer = document.getElementById('reels-container');
         if (reelsContainer && data.reels) {
             const reversedReels = [...data.reels].reverse();
-            reelsContainer.innerHTML = reversedReels.map(item => `
-                <div class="card reel-card" onclick="window.open('https://www.youtube.com/shorts/${item.youtubeId}', '_blank')">
-                    <div class="card-image placeholder-vertical" style="background-image: url('https://img.youtube.com/vi/${item.youtubeId}/maxresdefault.jpg'); background-size: cover; background-position: center;">
-                        <div class="play-overlay"><i class="fa-solid fa-play"></i></div>
-                        <span class="card-title">${item.title}</span>
+            reelsContainer.innerHTML = reversedReels.map((item, i) => `
+                <div class="card motion-card">
+                    <div class="card-video">
+                        <iframe id="yt-montage-${i}" src="https://www.youtube.com/embed/${item.youtubeId}?enablejsapi=1"
+                            title="${item.title}" frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen></iframe>
                     </div>
+                    <div class="motion-card-title">${item.title}</div>
                 </div>
             `).join('');
         }
@@ -98,7 +101,7 @@ async function loadContentFromAPI() {
 // Setup all Carousel Navigations
 function setupAllCarousels() {
     const carousels = [
-        { container: 'reels-container', prev: 'reels-prev', next: 'reels-next', cardWidth: 180 },
+        { container: 'reels-container', prev: 'reels-prev', next: 'reels-next', cardWidth: 350 },
         { container: 'motion-container', prev: 'motion-prev', next: 'motion-next', cardWidth: 350 },
         { container: 'design-container', prev: 'design-prev', next: 'design-next', cardWidth: 280 },
         { container: 'thumbnails-container', prev: 'thumbnails-prev', next: 'thumbnails-next', cardWidth: 320 },
