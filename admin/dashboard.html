@@ -200,6 +200,51 @@
             margin-bottom: 1rem;
             display: none;
         }
+
+        .file-upload-area {
+            border: 2px dashed #333;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #0a0a0a;
+        }
+
+        .file-upload-area:hover,
+        .file-upload-area.dragover {
+            border-color: #fbbf24;
+            background: #111;
+        }
+
+        .file-upload-area i {
+            font-size: 2rem;
+            color: #fbbf24;
+            margin-bottom: 0.5rem;
+        }
+
+        .file-upload-area p {
+            color: #9ca3af;
+            font-size: 0.9rem;
+        }
+
+        .file-upload-area input[type="file"] {
+            display: none;
+        }
+
+        .image-preview {
+            max-width: 200px;
+            max-height: 150px;
+            border-radius: 8px;
+            margin-top: 0.5rem;
+            display: none;
+        }
+
+        .file-name {
+            color: #fbbf24;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
     </style>
 </head>
 
@@ -268,15 +313,21 @@
         <div class="tab-content" id="graphicDesign">
             <div class="card">
                 <h2 class="section-title"><i class="fa-solid fa-palette"></i> إضافة تصميم جرافيك</h2>
-                <form id="form-graphicDesign">
+                <form id="form-graphicDesign" enctype="multipart/form-data">
                     <div class="form-row">
                         <div class="form-group">
                             <label>العنوان</label>
                             <input type="text" name="title" placeholder="عنوان التصميم" required>
                         </div>
                         <div class="form-group">
-                            <label>رابط الصورة</label>
-                            <input type="url" name="imageUrl" placeholder="https://example.com/image.jpg" required>
+                            <label>الصورة</label>
+                            <div class="file-upload-area" onclick="this.querySelector('input').click()">
+                                <i class="fa-solid fa-cloud-arrow-up"></i>
+                                <p>اضغط هنا لاختيار صورة</p>
+                                <input type="file" name="image" accept="image/*" required onchange="previewImage(this)">
+                                <img class="image-preview" alt="preview">
+                                <div class="file-name"></div>
+                            </div>
                         </div>
                     </div>
                     <button type="submit" class="btn-add"><i class="fa-solid fa-plus"></i> إضافة</button>
@@ -289,15 +340,21 @@
         <div class="tab-content" id="thumbnails">
             <div class="card">
                 <h2 class="section-title"><i class="fa-solid fa-image"></i> إضافة صورة مصغرة</h2>
-                <form id="form-thumbnails">
+                <form id="form-thumbnails" enctype="multipart/form-data">
                     <div class="form-row">
                         <div class="form-group">
                             <label>العنوان</label>
                             <input type="text" name="title" placeholder="عنوان الصورة" required>
                         </div>
                         <div class="form-group">
-                            <label>رابط الصورة</label>
-                            <input type="url" name="imageUrl" placeholder="https://example.com/image.jpg" required>
+                            <label>الصورة</label>
+                            <div class="file-upload-area" onclick="this.querySelector('input').click()">
+                                <i class="fa-solid fa-cloud-arrow-up"></i>
+                                <p>اضغط هنا لاختيار صورة</p>
+                                <input type="file" name="image" accept="image/*" required onchange="previewImage(this)">
+                                <img class="image-preview" alt="preview">
+                                <div class="file-name"></div>
+                            </div>
                         </div>
                     </div>
                     <button type="submit" class="btn-add"><i class="fa-solid fa-plus"></i> إضافة</button>
@@ -391,34 +448,63 @@
             return input.trim();
         }
 
+        // Categories that use file upload
+        const uploadCategories = ['graphicDesign', 'thumbnails'];
+
         // Add item
         categories.forEach(category => {
             const form = document.getElementById(`form-${category}`);
             if (form) {
                 form.addEventListener('submit', async (e) => {
                     e.preventDefault();
-                    const formData = new FormData(form);
-                    const data = Object.fromEntries(formData);
 
-                    // Auto-extract YouTube ID if the field exists
-                    if (data.youtubeId) {
-                        data.youtubeId = extractYouTubeId(data.youtubeId);
-                    }
+                    if (uploadCategories.includes(category)) {
+                        // Use FormData for file upload
+                        const formData = new FormData(form);
+                        try {
+                            const response = await fetch(`/api/upload/${category}`, {
+                                method: 'POST',
+                                body: formData
+                            });
 
-                    try {
-                        const response = await fetch(`/api/content/${category}`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(data)
-                        });
-
-                        if (response.ok) {
-                            showSuccess();
-                            form.reset();
-                            loadContent();
+                            if (response.ok) {
+                                showSuccess();
+                                form.reset();
+                                // Reset preview
+                                const preview = form.querySelector('.image-preview');
+                                const fileName = form.querySelector('.file-name');
+                                if (preview) preview.style.display = 'none';
+                                if (fileName) fileName.textContent = '';
+                                loadContent();
+                            }
+                        } catch (error) {
+                            console.error('Error uploading:', error);
                         }
-                    } catch (error) {
-                        console.error('Error adding item:', error);
+                    } else {
+                        // Normal JSON submission for video categories
+                        const formData = new FormData(form);
+                        const data = Object.fromEntries(formData);
+
+                        // Auto-extract YouTube ID if the field exists
+                        if (data.youtubeId) {
+                            data.youtubeId = extractYouTubeId(data.youtubeId);
+                        }
+
+                        try {
+                            const response = await fetch(`/api/content/${category}`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(data)
+                            });
+
+                            if (response.ok) {
+                                showSuccess();
+                                form.reset();
+                                loadContent();
+                            }
+                        } catch (error) {
+                            console.error('Error adding item:', error);
+                        }
                     }
                 });
             }
@@ -452,6 +538,23 @@
         // Logout
         function logout() {
             window.location.href = '/api/logout';
+        }
+
+        // Image preview function
+        function previewImage(input) {
+            const area = input.closest('.file-upload-area');
+            const preview = area.querySelector('.image-preview');
+            const fileNameDiv = area.querySelector('.file-name');
+
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(input.files[0]);
+                fileNameDiv.textContent = input.files[0].name;
+            }
         }
 
         // Initial load

@@ -3,6 +3,20 @@ const session = require('express-session');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const multer = require('multer');
+
+// Multer setup for file uploads
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir);
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, uploadsDir),
+    filename: (req, file, cb) => {
+        const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(file.originalname);
+        cb(null, uniqueName);
+    }
+});
+const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } }); // 10MB max
 
 const app = express();
 const PORT = 3000;
@@ -13,6 +27,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
+app.use('/uploads', express.static(uploadsDir));
 app.use(session({
     secret: 'portfolio-secret-key-2024',
     resave: false,
@@ -110,6 +125,30 @@ app.post('/api/content/:category', requireAuth, (req, res) => {
     const newItem = {
         id: Date.now(),
         ...req.body
+    };
+
+    data[category].push(newItem);
+    writeData(data);
+    res.json({ success: true, item: newItem });
+});
+
+// Upload image and add item (protected)
+app.post('/api/upload/:category', requireAuth, upload.single('image'), (req, res) => {
+    const data = readData();
+    const category = req.params.category;
+
+    if (!data[category]) {
+        return res.status(404).json({ error: 'القسم غير موجود' });
+    }
+
+    if (!req.file) {
+        return res.status(400).json({ error: 'لم يتم اختيار صورة' });
+    }
+
+    const newItem = {
+        id: Date.now(),
+        title: req.body.title || '',
+        imageUrl: '/uploads/' + req.file.filename
     };
 
     data[category].push(newItem);
