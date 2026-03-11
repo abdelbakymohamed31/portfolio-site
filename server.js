@@ -29,7 +29,7 @@ if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
 if (!fs.existsSync(DATA_FILE)) {
     fs.writeFileSync(DATA_FILE, JSON.stringify({
         admin: { username: 'admin', password: 'mustafa2024' },
-        reels: [], motionGraphics: [], graphicDesign: [], thumbnails: [], webDesign: []
+        reels: [], montage: [], motionGraphics: [], graphicDesign: [], thumbnails: [], webDesign: []
     }, null, 2));
 }
 
@@ -52,7 +52,7 @@ function readData() {
         const data = fs.readFileSync(DATA_FILE, 'utf8');
         return JSON.parse(data);
     } catch (error) {
-        return { admin: { username: 'admin', password: 'mustafa2024' }, reels: [], motionGraphics: [], graphicDesign: [], thumbnails: [], webDesign: [] };
+        return { admin: { username: 'admin', password: 'mustafa2024' }, reels: [], montage: [], motionGraphics: [], graphicDesign: [], thumbnails: [], webDesign: [] };
     }
 }
 

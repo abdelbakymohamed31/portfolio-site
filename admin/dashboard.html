@@ -267,8 +267,9 @@
 
         <div class="tabs">
             <button class="tab active" data-tab="heroVideo">الفيديو التعريفي</button>
-            <button class="tab" data-tab="motionGraphics">موشن جرافيك</button>
+            <button class="tab" data-tab="montage">المونتاج</button>
             <button class="tab" data-tab="reels">ريلز</button>
+            <button class="tab" data-tab="motionGraphics">موشن جرافيك</button>
             <button class="tab" data-tab="graphicDesign">تصميم جرافيك</button>
             <button class="tab" data-tab="thumbnails">صور مصغرة</button>
             <button class="tab" data-tab="webDesign">مواقع وتطبيقات</button>
@@ -296,6 +297,34 @@
                     <button type="submit" class="btn-add"><i class="fa-solid fa-upload"></i> تغيير الفيديو
                         التعريفي</button>
                 </form>
+            </div>
+        </div>
+
+        <!-- Montage -->
+        <div class="tab-content" id="montage">
+            <div class="card">
+                <h2 class="section-title"><i class="fa-solid fa-clapperboard"></i> إضافة مونتاج</h2>
+                <form id="form-montage" enctype="multipart/form-data">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>العنوان</label>
+                            <input type="text" name="title" placeholder="عنوان الفيديو" required>
+                        </div>
+                        <div class="form-group">
+                            <label>الفيديو (عرضي - Landscape)</label>
+                            <div class="file-upload-area" onclick="this.querySelector('input').click()">
+                                <i class="fa-solid fa-cloud-arrow-up"></i>
+                                <p>اضغط هنا لاختيار فيديو (MP4, WebM)</p>
+                                <input type="file" name="video" accept="video/mp4,video/webm,video/*" required
+                                    onchange="previewVideo(this)">
+                                <video class="video-preview" controls></video>
+                                <div class="file-name"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-add"><i class="fa-solid fa-plus"></i> إضافة</button>
+                </form>
+                <div class="items-list" id="list-montage"></div>
             </div>
         </div>
 
@@ -432,7 +461,7 @@
     </div>
 
     <script>
-        const categories = ['motionGraphics', 'reels', 'graphicDesign', 'thumbnails', 'webDesign'];
+        const categories = ['montage', 'reels', 'motionGraphics', 'graphicDesign', 'thumbnails', 'webDesign'];
 
         // Tab switching
         document.querySelectorAll('.tab').forEach(tab => {
@@ -537,7 +566,7 @@
 
         // Categories that use file upload
         const uploadCategories = ['graphicDesign', 'thumbnails'];
-        const videoUploadCategories = ['motionGraphics', 'reels'];
+        const videoUploadCategories = ['montage', 'motionGraphics', 'reels'];
 
         // Add item
         categories.forEach(category => {

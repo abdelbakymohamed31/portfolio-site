@@ -55,15 +55,15 @@ async function loadContentFromAPI() {
             });
         }
 
-        // Load Montage (Carousel - reverse to show newest first)
-        const reelsContainer = document.getElementById('reels-container');
-        if (reelsContainer && data.reels) {
-            const reversedReels = [...data.reels].reverse();
-            reelsContainer.innerHTML = reversedReels.map((item, i) => {
+        // Load Montage (Carousel - horizontal videos)
+        const montageContainer = document.getElementById('montage-container');
+        if (montageContainer && data.montage) {
+            const reversedMontage = [...data.montage].reverse();
+            montageContainer.innerHTML = reversedMontage.map((item, i) => {
                 if (item.videoUrl) {
                     return `
-                        <div class="card motion-card">
-                            <div class="card-video">
+                        <div class="card motion-card montage-card">
+                            <div class="card-video card-video-landscape">
                                 <video controls preload="metadata" playsinline>
                                     <source src="${item.videoUrl}" type="video/mp4">
                                     المتصفح لا يدعم تشغيل الفيديو
@@ -74,9 +74,43 @@ async function loadContentFromAPI() {
                     `;
                 } else if (item.youtubeId) {
                     return `
-                        <div class="card motion-card">
-                            <div class="card-video">
+                        <div class="card motion-card montage-card">
+                            <div class="card-video card-video-landscape">
                                 <iframe id="yt-montage-${i}" src="https://www.youtube.com/embed/${item.youtubeId}?enablejsapi=1"
+                                    title="${item.title}" frameborder="0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowfullscreen></iframe>
+                            </div>
+                            <div class="motion-card-title">${item.title}</div>
+                        </div>
+                    `;
+                }
+                return '';
+            }).join('');
+        }
+
+        // Load Reels (Carousel - vertical/portrait videos)
+        const reelsContainer = document.getElementById('reels-container');
+        if (reelsContainer && data.reels) {
+            const reversedReels = [...data.reels].reverse();
+            reelsContainer.innerHTML = reversedReels.map((item, i) => {
+                if (item.videoUrl) {
+                    return `
+                        <div class="card reel-card">
+                            <div class="card-video card-video-portrait">
+                                <video controls preload="metadata" playsinline>
+                                    <source src="${item.videoUrl}" type="video/mp4">
+                                    المتصفح لا يدعم تشغيل الفيديو
+                                </video>
+                            </div>
+                            <div class="motion-card-title">${item.title}</div>
+                        </div>
+                    `;
+                } else if (item.youtubeId) {
+                    return `
+                        <div class="card reel-card">
+                            <div class="card-video card-video-portrait">
+                                <iframe id="yt-reel-${i}" src="https://www.youtube.com/embed/${item.youtubeId}?enablejsapi=1"
                                     title="${item.title}" frameborder="0"
                                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                     allowfullscreen></iframe>
@@ -169,7 +203,8 @@ async function loadContentFromAPI() {
 // Setup all Carousel Navigations
 function setupAllCarousels() {
     const carousels = [
-        { container: 'reels-container', prev: 'reels-prev', next: 'reels-next', cardWidth: 350 },
+        { container: 'montage-container', prev: 'montage-prev', next: 'montage-next', cardWidth: 350 },
+        { container: 'reels-container', prev: 'reels-prev', next: 'reels-next', cardWidth: 200 },
         { container: 'motion-container', prev: 'motion-prev', next: 'motion-next', cardWidth: 350 },
         { container: 'design-container', prev: 'design-prev', next: 'design-next', cardWidth: 280 },
         { container: 'thumbnails-container', prev: 'thumbnails-prev', next: 'thumbnails-next', cardWidth: 320 },
