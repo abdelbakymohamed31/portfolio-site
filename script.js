@@ -25,10 +25,34 @@ async function loadContentFromAPI() {
         const heroVideoPlayer = document.getElementById('hero-video-player');
         if (heroVideoPlayer && data.heroVideo) {
             heroVideoPlayer.innerHTML = `
-                <video autoplay loop muted playsinline style="width:100%;height:100%;object-fit:cover;">
+                <video id="hero-vid" autoplay loop muted playsinline>
                     <source src="${data.heroVideo}" type="video/mp4">
                 </video>
+                <div class="hero-controls">
+                    <button id="hero-play-btn" title="تشغيل/إيقاف"><i class="fa-solid fa-pause"></i></button>
+                    <button id="hero-mute-btn" title="صوت"><i class="fa-solid fa-volume-xmark"></i></button>
+                </div>
             `;
+            const heroVid = document.getElementById('hero-vid');
+            const playBtn = document.getElementById('hero-play-btn');
+            const muteBtn = document.getElementById('hero-mute-btn');
+
+            playBtn.addEventListener('click', () => {
+                if (heroVid.paused) {
+                    heroVid.play();
+                    playBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+                } else {
+                    heroVid.pause();
+                    playBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+                }
+            });
+
+            muteBtn.addEventListener('click', () => {
+                heroVid.muted = !heroVid.muted;
+                muteBtn.innerHTML = heroVid.muted
+                    ? '<i class="fa-solid fa-volume-xmark"></i>'
+                    : '<i class="fa-solid fa-volume-high"></i>';
+            });
         }
 
         // Load Montage (Carousel - reverse to show newest first)

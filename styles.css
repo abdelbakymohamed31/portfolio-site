@@ -324,6 +324,45 @@ ul {
     border: none;
 }
 
+.video-wrapper video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border: none;
+    cursor: pointer;
+}
+
+.hero-controls {
+    position: absolute;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 0.5rem;
+    z-index: 10;
+}
+
+.hero-controls button {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fbbf24;
+    border: 2px solid rgba(251, 191, 36, 0.5);
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    backdrop-filter: blur(5px);
+}
+
+.hero-controls button:hover {
+    background: rgba(251, 191, 36, 0.3);
+    border-color: #fbbf24;
+}
+
 .video-label {
     margin-top: 1rem;
     font-size: 0.95rem;
@@ -395,22 +434,23 @@ ul {
 
 .card-video {
     position: relative;
-    padding-bottom: 56.25%;
-    /* 16:9 aspect ratio */
-    height: 0;
     overflow: hidden;
+    background: #000;
+    border-radius: 16px 16px 0 0;
 }
 
-.card-video iframe,
 .card-video video {
-    position: absolute;
-    top: 0;
-    left: 0;
     width: 100%;
-    height: 100%;
+    display: block;
     border: none;
-    object-fit: cover;
     background: #000;
+}
+
+.card-video iframe {
+    width: 100%;
+    aspect-ratio: 16/9;
+    display: block;
+    border: none;
 }
 
 @media (min-width: 768px) {
