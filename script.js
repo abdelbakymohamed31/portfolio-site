@@ -21,38 +21,82 @@ async function loadContentFromAPI() {
         const response = await fetch('/api/content');
         const data = await response.json();
 
+        // Load Hero Video (intro video at top of page)
+        const heroVideoPlayer = document.getElementById('hero-video-player');
+        if (heroVideoPlayer && data.heroVideo) {
+            heroVideoPlayer.innerHTML = `
+                <video autoplay loop muted playsinline style="width:100%;height:100%;object-fit:cover;">
+                    <source src="${data.heroVideo}" type="video/mp4">
+                </video>
+            `;
+        }
+
         // Load Montage (Carousel - reverse to show newest first)
         const reelsContainer = document.getElementById('reels-container');
         if (reelsContainer && data.reels) {
             const reversedReels = [...data.reels].reverse();
-            reelsContainer.innerHTML = reversedReels.map((item, i) => `
-                <div class="card motion-card">
-                    <div class="card-video">
-                        <iframe id="yt-montage-${i}" src="https://www.youtube.com/embed/${item.youtubeId}?enablejsapi=1"
-                            title="${item.title}" frameborder="0"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowfullscreen></iframe>
-                    </div>
-                    <div class="motion-card-title">${item.title}</div>
-                </div>
-            `).join('');
+            reelsContainer.innerHTML = reversedReels.map((item, i) => {
+                if (item.videoUrl) {
+                    return `
+                        <div class="card motion-card">
+                            <div class="card-video">
+                                <video controls preload="metadata" playsinline>
+                                    <source src="${item.videoUrl}" type="video/mp4">
+                                    المتصفح لا يدعم تشغيل الفيديو
+                                </video>
+                            </div>
+                            <div class="motion-card-title">${item.title}</div>
+                        </div>
+                    `;
+                } else if (item.youtubeId) {
+                    return `
+                        <div class="card motion-card">
+                            <div class="card-video">
+                                <iframe id="yt-montage-${i}" src="https://www.youtube.com/embed/${item.youtubeId}?enablejsapi=1"
+                                    title="${item.title}" frameborder="0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowfullscreen></iframe>
+                            </div>
+                            <div class="motion-card-title">${item.title}</div>
+                        </div>
+                    `;
+                }
+                return '';
+            }).join('');
         }
 
         // Load Motion Graphics (Carousel - reverse to show newest first)
         const motionContainer = document.getElementById('motion-container');
         if (motionContainer && data.motionGraphics) {
             const reversedMotion = [...data.motionGraphics].reverse();
-            motionContainer.innerHTML = reversedMotion.map((item, i) => `
-                <div class="card motion-card">
-                    <div class="card-video">
-                        <iframe id="yt-video-${i}" src="https://www.youtube.com/embed/${item.youtubeId}?enablejsapi=1"
-                            title="${item.title}" frameborder="0"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowfullscreen></iframe>
-                    </div>
-                    <div class="motion-card-title">${item.title}</div>
-                </div>
-            `).join('');
+            motionContainer.innerHTML = reversedMotion.map((item, i) => {
+                if (item.videoUrl) {
+                    return `
+                        <div class="card motion-card">
+                            <div class="card-video">
+                                <video controls preload="metadata" playsinline>
+                                    <source src="${item.videoUrl}" type="video/mp4">
+                                    المتصفح لا يدعم تشغيل الفيديو
+                                </video>
+                            </div>
+                            <div class="motion-card-title">${item.title}</div>
+                        </div>
+                    `;
+                } else if (item.youtubeId) {
+                    return `
+                        <div class="card motion-card">
+                            <div class="card-video">
+                                <iframe id="yt-video-${i}" src="https://www.youtube.com/embed/${item.youtubeId}?enablejsapi=1"
+                                    title="${item.title}" frameborder="0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowfullscreen></iframe>
+                            </div>
+                            <div class="motion-card-title">${item.title}</div>
+                        </div>
+                    `;
+                }
+                return '';
+            }).join('');
         }
 
         // Load Graphic Design (Carousel - reverse to show newest first)
@@ -202,63 +246,62 @@ function simulateGoogleLogin() {
     document.getElementById('user-avatar').src = mockUser.avatar;
 }
 
-// YouTube Video Manager - Stop other videos when one plays
+// Video Manager - Stop other videos when one plays (supports both HTML5 video and YouTube iframes)
 function setupVideoManager() {
+    // HTML5 Video elements
+    const videos = document.querySelectorAll('.card-video video');
+    // YouTube iframes (for backwards compatibility with old data)
     const iframes = document.querySelectorAll('iframe[src*="youtube"]');
 
     // Function to pause a YouTube iframe
-    function pauseVideo(iframe) {
+    function pauseYouTube(iframe) {
         iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
     }
 
-    // Function to pause all videos except one
-    function pauseAllExcept(currentIframe) {
+    // Function to pause all media except one
+    function pauseAllExcept(currentElement) {
+        videos.forEach(video => {
+            if (video !== currentElement) {
+                video.pause();
+            }
+        });
         iframes.forEach(iframe => {
-            if (iframe !== currentIframe) {
-                pauseVideo(iframe);
+            if (iframe !== currentElement) {
+                pauseYouTube(iframe);
             }
         });
     }
 
-    // Listen for messages from YouTube iframes
-    window.addEventListener('message', function (event) {
-        // Check if it's from YouTube
-        if (event.origin === 'https://www.youtube.com') {
-            try {
-                const data = JSON.parse(event.data);
-                // When a video starts playing
-                if (data.event === 'onStateChange' && data.info === 1) {
-                    // Find which iframe sent this and pause others
-                    iframes.forEach(iframe => {
-                        if (iframe.contentWindow === event.source) {
-                            pauseAllExcept(iframe);
-                        }
-                    });
-                }
-            } catch (e) {
-                // Ignore parsing errors
-            }
-        }
-    });
-
-    // Add click handlers to video wrappers
-    iframes.forEach(iframe => {
-        const wrapper = iframe.closest('.card-video') || iframe.closest('.video-wrapper');
-        if (wrapper) {
-            wrapper.addEventListener('click', function () {
-                // Small delay to let the video start, then pause others
-                setTimeout(() => {
-                    pauseAllExcept(iframe);
-                }, 300);
-            });
-        }
-
-        // Also add listener directly on iframe for when user clicks play button
-        iframe.addEventListener('load', function () {
-            // Subscribe to YouTube player events
-            iframe.contentWindow.postMessage('{"event":"listening"}', '*');
+    // HTML5 video play handlers
+    videos.forEach(video => {
+        video.addEventListener('play', function () {
+            pauseAllExcept(video);
         });
     });
+
+    // YouTube iframe handlers (backwards compatibility)
+    if (iframes.length > 0) {
+        window.addEventListener('message', function (event) {
+            if (event.origin === 'https://www.youtube.com') {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.event === 'onStateChange' && data.info === 1) {
+                        iframes.forEach(iframe => {
+                            if (iframe.contentWindow === event.source) {
+                                pauseAllExcept(iframe);
+                            }
+                        });
+                    }
+                } catch (e) { }
+            }
+        });
+
+        iframes.forEach(iframe => {
+            iframe.addEventListener('load', function () {
+                iframe.contentWindow.postMessage('{"event":"listening"}', '*');
+            });
+        });
+    }
 }
 
 // Slow Smooth Scroll for anchor links

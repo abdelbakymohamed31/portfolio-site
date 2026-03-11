@@ -401,13 +401,16 @@ ul {
     overflow: hidden;
 }
 
-.card-video iframe {
+.card-video iframe,
+.card-video video {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
     border: none;
+    object-fit: cover;
+    background: #000;
 }
 
 @media (min-width: 768px) {

@@ -240,6 +240,14 @@
             display: none;
         }
 
+        .video-preview {
+            max-width: 300px;
+            max-height: 200px;
+            border-radius: 8px;
+            margin-top: 0.5rem;
+            display: none;
+        }
+
         .file-name {
             color: #fbbf24;
             font-size: 0.85rem;
@@ -258,27 +266,59 @@
         <div class="success-msg" id="success-msg">تمت العملية بنجاح!</div>
 
         <div class="tabs">
-            <button class="tab active" data-tab="motionGraphics">موشن جرافيك</button>
+            <button class="tab active" data-tab="heroVideo">الفيديو التعريفي</button>
+            <button class="tab" data-tab="motionGraphics">موشن جرافيك</button>
             <button class="tab" data-tab="reels">ريلز</button>
             <button class="tab" data-tab="graphicDesign">تصميم جرافيك</button>
             <button class="tab" data-tab="thumbnails">صور مصغرة</button>
             <button class="tab" data-tab="webDesign">مواقع وتطبيقات</button>
         </div>
 
+        <!-- Hero Video -->
+        <div class="tab-content active" id="heroVideo">
+            <div class="card">
+                <h2 class="section-title"><i class="fa-solid fa-play-circle"></i> الفيديو التعريفي (الرئيسي)</h2>
+                <p style="color: #9ca3af; margin-bottom: 1rem;">هذا الفيديو يظهر في أعلى الموقع. ارفع فيديو جديد
+                    لتغييره.</p>
+                <div id="current-hero-video" style="margin-bottom: 1.5rem;"></div>
+                <form id="form-heroVideo" enctype="multipart/form-data">
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label>رفع فيديو جديد</label>
+                        <div class="file-upload-area" onclick="this.querySelector('input').click()">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                            <p>اضغط هنا لاختيار الفيديو التعريفي (MP4, WebM)</p>
+                            <input type="file" name="video" accept="video/mp4,video/webm,video/*" required
+                                onchange="previewVideo(this)">
+                            <video class="video-preview" controls></video>
+                            <div class="file-name"></div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-add"><i class="fa-solid fa-upload"></i> تغيير الفيديو
+                        التعريفي</button>
+                </form>
+            </div>
+        </div>
+
         <!-- Motion Graphics -->
-        <div class="tab-content active" id="motionGraphics">
+        <div class="tab-content" id="motionGraphics">
             <div class="card">
                 <h2 class="section-title"><i class="fa-solid fa-video"></i> إضافة موشن جرافيك</h2>
-                <form id="form-motionGraphics">
+                <form id="form-motionGraphics" enctype="multipart/form-data">
                     <div class="form-row">
                         <div class="form-group">
                             <label>العنوان</label>
                             <input type="text" name="title" placeholder="عنوان الفيديو" required>
                         </div>
                         <div class="form-group">
-                            <label>YouTube ID</label>
-                            <input type="text" name="youtubeId" placeholder="YouTube ID أو رابط الفيديو الكامل"
-                                required>
+                            <label>الفيديو</label>
+                            <div class="file-upload-area" onclick="this.querySelector('input').click()">
+                                <i class="fa-solid fa-cloud-arrow-up"></i>
+                                <p>اضغط هنا لاختيار فيديو (MP4, WebM)</p>
+                                <input type="file" name="video" accept="video/mp4,video/webm,video/*" required
+                                    onchange="previewVideo(this)">
+                                <video class="video-preview" controls></video>
+                                <div class="file-name"></div>
+                            </div>
                         </div>
                     </div>
                     <button type="submit" class="btn-add"><i class="fa-solid fa-plus"></i> إضافة</button>
@@ -291,16 +331,22 @@
         <div class="tab-content" id="reels">
             <div class="card">
                 <h2 class="section-title"><i class="fa-solid fa-film"></i> إضافة ريلز</h2>
-                <form id="form-reels">
+                <form id="form-reels" enctype="multipart/form-data">
                     <div class="form-row">
                         <div class="form-group">
                             <label>العنوان</label>
                             <input type="text" name="title" placeholder="عنوان الريلز" required>
                         </div>
                         <div class="form-group">
-                            <label>YouTube ID</label>
-                            <input type="text" name="youtubeId" placeholder="YouTube ID أو رابط الفيديو الكامل"
-                                required>
+                            <label>الفيديو</label>
+                            <div class="file-upload-area" onclick="this.querySelector('input').click()">
+                                <i class="fa-solid fa-cloud-arrow-up"></i>
+                                <p>اضغط هنا لاختيار فيديو (MP4, WebM)</p>
+                                <input type="file" name="video" accept="video/mp4,video/webm,video/*" required
+                                    onchange="previewVideo(this)">
+                                <video class="video-preview" controls></video>
+                                <div class="file-name"></div>
+                            </div>
                         </div>
                     </div>
                     <button type="submit" class="btn-add"><i class="fa-solid fa-plus"></i> إضافة</button>
@@ -404,6 +450,17 @@
                 const response = await fetch('/api/content');
                 const data = await response.json();
 
+                // Load Hero Video
+                const heroVideoDiv = document.getElementById('current-hero-video');
+                if (heroVideoDiv && data.heroVideo) {
+                    heroVideoDiv.innerHTML = `
+                        <p style="color: #fbbf24; margin-bottom: 0.5rem;"><i class="fa-solid fa-check-circle"></i> الفيديو الحالي:</p>
+                        <video src="${data.heroVideo}" style="max-width: 300px; border-radius: 12px; border: 2px solid #333;" controls muted></video>
+                    `;
+                } else if (heroVideoDiv) {
+                    heroVideoDiv.innerHTML = '<p style="color: #9ca3af;"><i class="fa-solid fa-info-circle"></i> لا يوجد فيديو تعريفي مرفوع. يتم استخدام فيديو يوتيوب الافتراضي.</p>';
+                }
+
                 categories.forEach(category => {
                     const list = document.getElementById(`list-${category}`);
                     if (list && data[category]) {
@@ -411,7 +468,8 @@
                             <div class="item">
                                 <div class="item-info">
                                     ${item.imageUrl ? `<img src="${item.imageUrl}" class="item-thumb">` :
-                                item.youtubeId ? `<img src="https://img.youtube.com/vi/${item.youtubeId}/mqdefault.jpg" class="item-thumb">` : ''}
+                                item.videoUrl ? `<video src="${item.videoUrl}" class="item-thumb" muted></video>` :
+                                    item.youtubeId ? `<img src="https://img.youtube.com/vi/${item.youtubeId}/mqdefault.jpg" class="item-thumb">` : ''}
                                     <span>${item.title}</span>
                                 </div>
                                 <button class="btn-delete" onclick="deleteItem('${category}', ${item.id})">
@@ -448,8 +506,38 @@
             return input.trim();
         }
 
+        // Hero Video upload handler
+        const heroForm = document.getElementById('form-heroVideo');
+        if (heroForm) {
+            heroForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const formData = new FormData(heroForm);
+                try {
+                    const response = await fetch('/api/hero-video', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    if (response.ok) {
+                        showSuccess();
+                        heroForm.reset();
+                        const preview = heroForm.querySelector('.video-preview');
+                        const fileName = heroForm.querySelector('.file-name');
+                        if (preview) { preview.style.display = 'none'; preview.src = ''; }
+                        if (fileName) fileName.textContent = '';
+                        loadContent();
+                    } else {
+                        const err = await response.json();
+                        alert(err.error || 'حدث خطأ في الرفع');
+                    }
+                } catch (error) {
+                    console.error('Error uploading hero video:', error);
+                }
+            });
+        }
+
         // Categories that use file upload
         const uploadCategories = ['graphicDesign', 'thumbnails'];
+        const videoUploadCategories = ['motionGraphics', 'reels'];
 
         // Add item
         categories.forEach(category => {
@@ -458,8 +546,33 @@
                 form.addEventListener('submit', async (e) => {
                     e.preventDefault();
 
-                    if (uploadCategories.includes(category)) {
-                        // Use FormData for file upload
+                    if (videoUploadCategories.includes(category)) {
+                        // Use FormData for video upload
+                        const formData = new FormData(form);
+                        try {
+                            const response = await fetch(`/api/upload-video/${category}`, {
+                                method: 'POST',
+                                body: formData
+                            });
+
+                            if (response.ok) {
+                                showSuccess();
+                                form.reset();
+                                // Reset preview
+                                const preview = form.querySelector('.video-preview');
+                                const fileName = form.querySelector('.file-name');
+                                if (preview) { preview.style.display = 'none'; preview.src = ''; }
+                                if (fileName) fileName.textContent = '';
+                                loadContent();
+                            } else {
+                                const err = await response.json();
+                                alert(err.error || 'حدث خطأ في الرفع');
+                            }
+                        } catch (error) {
+                            console.error('Error uploading video:', error);
+                        }
+                    } else if (uploadCategories.includes(category)) {
+                        // Use FormData for image upload
                         const formData = new FormData(form);
                         try {
                             const response = await fetch(`/api/upload/${category}`, {
@@ -481,14 +594,9 @@
                             console.error('Error uploading:', error);
                         }
                     } else {
-                        // Normal JSON submission for video categories
+                        // Normal JSON submission
                         const formData = new FormData(form);
                         const data = Object.fromEntries(formData);
-
-                        // Auto-extract YouTube ID if the field exists
-                        if (data.youtubeId) {
-                            data.youtubeId = extractYouTubeId(data.youtubeId);
-                        }
 
                         try {
                             const response = await fetch(`/api/content/${category}`, {
@@ -554,6 +662,21 @@
                 };
                 reader.readAsDataURL(input.files[0]);
                 fileNameDiv.textContent = input.files[0].name;
+            }
+        }
+
+        // Video preview function
+        function previewVideo(input) {
+            const area = input.closest('.file-upload-area');
+            const preview = area.querySelector('.video-preview');
+            const fileNameDiv = area.querySelector('.file-name');
+
+            if (input.files && input.files[0]) {
+                const url = URL.createObjectURL(input.files[0]);
+                preview.src = url;
+                preview.style.display = 'block';
+                const sizeMB = (input.files[0].size / (1024 * 1024)).toFixed(1);
+                fileNameDiv.textContent = `${input.files[0].name} (${sizeMB} MB)`;
             }
         }
 
