@@ -84,6 +84,18 @@ async function loadContentFromAPI() {
             }
         });
 
+        // Sort items by custom order index if set, or fallback to createdAt
+        Object.keys(data).forEach(cat => {
+            data[cat].sort((a, b) => {
+                if (a.order !== undefined && b.order !== undefined) {
+                    return a.order - b.order;
+                }
+                if (a.order !== undefined) return -1;
+                if (b.order !== undefined) return 1;
+                return 0;
+            });
+        });
+
         // Load Montage (Carousel - horizontal videos)
         const montageContainer = document.getElementById('montage-container');
         if (montageContainer && data.montage) {
