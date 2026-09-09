@@ -14,5 +14,4 @@ Thumbs.db
 npm-debug.log*
 
 # User data - DO NOT overwrite
-data/content.json
-uploads/
+

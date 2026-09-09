@@ -17,7 +17,6 @@ const storage = multer.diskStorage({
     }
 });
 const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } }); // 10MB max for images
-const uploadVideo = multer({ storage, limits: { fileSize: 100 * 1024 * 1024 } }); // 100MB max for videos
 
 const app = express();
 const PORT = 3000;
@@ -168,38 +167,15 @@ app.post('/api/upload/:category', requireAuth, upload.single('image'), (req, res
     res.json({ success: true, item: newItem });
 });
 
-// Upload video and add item (protected)
-app.post('/api/upload-video/:category', requireAuth, uploadVideo.single('video'), (req, res) => {
-    const data = readData();
-    const category = req.params.category;
-
-    if (!data[category]) {
-        return res.status(404).json({ error: 'القسم غير موجود' });
-    }
-
-    if (!req.file) {
-        return res.status(400).json({ error: 'لم يتم اختيار فيديو' });
-    }
-
-    const newItem = {
-        id: Date.now(),
-        title: req.body.title || '',
-        videoUrl: '/uploads/' + req.file.filename
-    };
-
-    data[category].push(newItem);
-    writeData(data);
-    res.json({ success: true, item: newItem });
-});
-
-// Upload hero video (protected)
-app.post('/api/hero-video', requireAuth, uploadVideo.single('video'), (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ error: 'لم يتم اختيار فيديو' });
+// Set hero video (protected)
+app.post('/api/hero-video', requireAuth, (req, res) => {
+    const { youtubeId } = req.body;
+    if (!youtubeId) {
+        return res.status(400).json({ error: 'لم يتم توفير معرف يوتيوب' });
     }
 
     const data = readData();
-    data.heroVideo = '/uploads/' + req.file.filename;
+    data.heroVideo = youtubeId;
     writeData(data);
     res.json({ success: true, heroVideo: data.heroVideo });
 });

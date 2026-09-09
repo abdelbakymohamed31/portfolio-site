@@ -18,48 +18,76 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function loadContentFromAPI() {
     try {
-        const response = await fetch('/api/content');
-        const data = await response.json();
+        // 1. Get Hero Video settings
+        const heroDoc = await db.collection('settings').doc('hero').get();
+        const heroVideo = (heroDoc.exists && heroDoc.data().youtubeId) ? heroDoc.data().youtubeId : '';
 
         // Load Hero Video (intro video at top of page)
         const heroVideoPlayer = document.getElementById('hero-video-player');
-        if (heroVideoPlayer && data.heroVideo) {
-            heroVideoPlayer.innerHTML = `
-                <video id="hero-vid" autoplay loop muted playsinline>
-                    <source src="${data.heroVideo}" type="video/mp4">
-                </video>
-                <div class="hero-controls">
-                    <button id="hero-play-btn" title="تشغيل/إيقاف"><i class="fa-solid fa-pause"></i></button>
-                    <button id="hero-mute-btn" title="صوت"><i class="fa-solid fa-volume-xmark"></i></button>
-                </div>
-            `;
-            const heroVid = document.getElementById('hero-vid');
-            const playBtn = document.getElementById('hero-play-btn');
-            const muteBtn = document.getElementById('hero-mute-btn');
+        if (heroVideoPlayer && heroVideo) {
+            if (heroVideo.startsWith('/uploads/')) {
+                heroVideoPlayer.innerHTML = `
+                    <video id="hero-vid" autoplay loop muted playsinline>
+                        <source src="${heroVideo}" type="video/mp4">
+                    </video>
+                    <div class="hero-controls">
+                        <button id="hero-play-btn" title="تشغيل/إيقاف"><i class="fa-solid fa-pause"></i></button>
+                        <button id="hero-mute-btn" title="صوت"><i class="fa-solid fa-volume-xmark"></i></button>
+                    </div>
+                `;
+                const heroVid = document.getElementById('hero-vid');
+                const playBtn = document.getElementById('hero-play-btn');
+                const muteBtn = document.getElementById('hero-mute-btn');
 
-            playBtn.addEventListener('click', () => {
-                if (heroVid.paused) {
-                    heroVid.play();
-                    playBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
-                } else {
-                    heroVid.pause();
-                    playBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
-                }
-            });
+                playBtn.addEventListener('click', () => {
+                    if (heroVid.paused) {
+                        heroVid.play();
+                        playBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+                    } else {
+                        heroVid.pause();
+                        playBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+                    }
+                });
 
-            muteBtn.addEventListener('click', () => {
-                heroVid.muted = !heroVid.muted;
-                muteBtn.innerHTML = heroVid.muted
-                    ? '<i class="fa-solid fa-volume-xmark"></i>'
-                    : '<i class="fa-solid fa-volume-high"></i>';
-            });
+                muteBtn.addEventListener('click', () => {
+                    heroVid.muted = !heroVid.muted;
+                    muteBtn.innerHTML = heroVid.muted
+                        ? '<i class="fa-solid fa-volume-xmark"></i>'
+                        : '<i class="fa-solid fa-volume-high"></i>';
+                });
+            } else {
+                // YouTube Video
+                heroVideoPlayer.innerHTML = `
+                    <iframe id="hero-yt" 
+                        src="https://www.youtube.com/embed/${heroVideo}?autoplay=1&mute=1&loop=1&playlist=${heroVideo}&controls=0&showinfo=0&rel=0&enablejsapi=1"
+                        frameborder="0" 
+                        allow="autoplay; encrypted-media" 
+                        allowfullscreen 
+                        style="width: 100%; height: 100%; object-fit: cover;">
+                    </iframe>
+                `;
+            }
         }
+
+        // 2. Fetch all portfolio items from Firestore sorted by createdAt descending
+        const snapshot = await db.collection('portfolio_items').orderBy('createdAt', 'desc').get();
+        
+        const data = {
+            montage: [], reels: [], motionGraphics: [], graphicDesign: [], thumbnails: [], webDesign: []
+        };
+
+        snapshot.forEach(doc => {
+            const item = doc.data();
+            item.id = doc.id;
+            if (data[item.category]) {
+                data[item.category].push(item);
+            }
+        });
 
         // Load Montage (Carousel - horizontal videos)
         const montageContainer = document.getElementById('montage-container');
         if (montageContainer && data.montage) {
-            const reversedMontage = [...data.montage].reverse();
-            montageContainer.innerHTML = reversedMontage.map((item, i) => {
+            montageContainer.innerHTML = data.montage.map((item, i) => {
                 if (item.videoUrl) {
                     return `
                         <div class="card motion-card montage-card">
@@ -92,8 +120,7 @@ async function loadContentFromAPI() {
         // Load Reels (Carousel - vertical/portrait videos)
         const reelsContainer = document.getElementById('reels-container');
         if (reelsContainer && data.reels) {
-            const reversedReels = [...data.reels].reverse();
-            reelsContainer.innerHTML = reversedReels.map((item, i) => {
+            reelsContainer.innerHTML = data.reels.map((item, i) => {
                 if (item.videoUrl) {
                     return `
                         <div class="card reel-card">
@@ -123,11 +150,10 @@ async function loadContentFromAPI() {
             }).join('');
         }
 
-        // Load Motion Graphics (Carousel - reverse to show newest first)
+        // Load Motion Graphics (Carousel)
         const motionContainer = document.getElementById('motion-container');
         if (motionContainer && data.motionGraphics) {
-            const reversedMotion = [...data.motionGraphics].reverse();
-            motionContainer.innerHTML = reversedMotion.map((item, i) => {
+            motionContainer.innerHTML = data.motionGraphics.map((item, i) => {
                 if (item.videoUrl) {
                     return `
                         <div class="card motion-card">
@@ -157,11 +183,10 @@ async function loadContentFromAPI() {
             }).join('');
         }
 
-        // Load Graphic Design (Carousel - reverse to show newest first)
+        // Load Graphic Design (Carousel)
         const designContainer = document.getElementById('design-container');
         if (designContainer && data.graphicDesign) {
-            const reversedDesign = [...data.graphicDesign].reverse();
-            designContainer.innerHTML = reversedDesign.map(item => `
+            designContainer.innerHTML = data.graphicDesign.map(item => `
                 <div class="design-card carousel-card">
                     <img src="${item.imageUrl}" alt="${item.title}">
                     <div class="carousel-card-title">${item.title}</div>
@@ -169,22 +194,20 @@ async function loadContentFromAPI() {
             `).join('');
         }
 
-        // Load Thumbnails (Carousel - reverse to show newest first)
+        // Load Thumbnails (Carousel)
         const thumbContainer = document.getElementById('thumbnails-container');
         if (thumbContainer && data.thumbnails) {
-            const reversedThumbs = [...data.thumbnails].reverse();
-            thumbContainer.innerHTML = reversedThumbs.map(item => `
+            thumbContainer.innerHTML = data.thumbnails.map(item => `
                 <div class="thumbnail-card carousel-card">
                     <img src="${item.imageUrl}" alt="${item.title}">
                 </div>
             `).join('');
         }
 
-        // Load Web Design (Carousel - reverse to show newest first)
+        // Load Web Design (Carousel)
         const webContainer = document.getElementById('web-container');
         if (webContainer && data.webDesign) {
-            const reversedWeb = [...data.webDesign].reverse();
-            webContainer.innerHTML = reversedWeb.map(item => `
+            webContainer.innerHTML = data.webDesign.map(item => `
                 <div class="web-card carousel-card">
                     <img src="${item.imageUrl}" alt="${item.title}">
                     <div class="web-card-title">${item.title}</div>
