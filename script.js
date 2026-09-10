@@ -29,12 +29,17 @@ async function loadContentFromAPI() {
             console.log('Error fetching hero video setting:', err);
         }
 
+        // Fallback default hero video if not explicitly set in settings yet
+        if (!heroVideo) {
+            heroVideo = 'dQw4w9WgXcQ';
+        }
+
         // Load Hero Video (intro video autoplays on page load)
         const heroVideoPlayer = document.getElementById('hero-video-player');
         if (heroVideoPlayer && heroVideo) {
             if (heroVideo.startsWith('/uploads/')) {
                 heroVideoPlayer.innerHTML = `
-                    <video id="hero-vid" autoplay loop muted playsinline>
+                    <video id="hero-vid" autoplay loop muted playsinline style="width:100%;height:100%;object-fit:cover;">
                         <source src="${heroVideo}" type="video/mp4">
                     </video>
                     <div class="hero-controls">
@@ -46,29 +51,37 @@ async function loadContentFromAPI() {
                 const playBtn = document.getElementById('hero-play-btn');
                 const muteBtn = document.getElementById('hero-mute-btn');
 
-                playBtn.addEventListener('click', () => {
-                    if (heroVid.paused) {
-                        heroVid.play();
-                        playBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
-                    } else {
-                        heroVid.pause();
-                        playBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
-                    }
-                });
+                if (heroVid) {
+                    heroVid.play().catch(e => console.log('Autoplay handled:', e));
+                }
 
-                muteBtn.addEventListener('click', () => {
-                    heroVid.muted = !heroVid.muted;
-                    muteBtn.innerHTML = heroVid.muted
-                        ? '<i class="fa-solid fa-volume-xmark"></i>'
-                        : '<i class="fa-solid fa-volume-high"></i>';
-                });
+                if (playBtn && heroVid) {
+                    playBtn.addEventListener('click', () => {
+                        if (heroVid.paused) {
+                            heroVid.play();
+                            playBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+                        } else {
+                            heroVid.pause();
+                            playBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+                        }
+                    });
+                }
+
+                if (muteBtn && heroVid) {
+                    muteBtn.addEventListener('click', () => {
+                        heroVid.muted = !heroVid.muted;
+                        muteBtn.innerHTML = heroVid.muted
+                            ? '<i class="fa-solid fa-volume-xmark"></i>'
+                            : '<i class="fa-solid fa-volume-high"></i>';
+                    });
+                }
             } else {
                 // YouTube Video with Autoplay enabled
                 heroVideoPlayer.innerHTML = `
                     <iframe id="hero-yt" 
-                        src="https://www.youtube.com/embed/${heroVideo}?autoplay=1&mute=1&loop=1&playlist=${heroVideo}&controls=0&showinfo=0&rel=0&enablejsapi=1"
+                        src="https://www.youtube.com/embed/${heroVideo}?autoplay=1&mute=1&loop=1&playlist=${heroVideo}&controls=1&showinfo=0&rel=0&enablejsapi=1"
                         frameborder="0" 
-                        allow="autoplay; encrypted-media" 
+                        allow="autoplay; encrypted-media; picture-in-picture" 
                         allowfullscreen 
                         style="width: 100%; height: 100%; object-fit: cover;">
                     </iframe>
