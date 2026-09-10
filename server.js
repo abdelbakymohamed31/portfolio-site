@@ -67,14 +67,8 @@ function requireAuth(req, res, next) {
 
 // ==================== AUTH ROUTES ====================
 
-// Login page
-app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, 'admin', 'login.html'));
-});
-app.get('/admin/login', (req, res) => {
-    res.sendFile(path.join(__dirname, 'admin', 'login.html'));
-});
-app.get('/admin/login.html', (req, res) => {
+// Login page routes
+app.get(['/admin', '/admin/login', '/admin/login*'], (req, res) => {
     res.sendFile(path.join(__dirname, 'admin', 'login.html'));
 });
 
@@ -91,11 +85,8 @@ app.get('/api/logout', (req, res) => {
     res.redirect('/admin');
 });
 
-// Dashboard page
-app.get('/admin/dashboard', (req, res) => {
-    res.sendFile(path.join(__dirname, 'admin', 'dashboard.html'));
-});
-app.get('/admin/dashboard.html', (req, res) => {
+// Dashboard page routes (handles /admin/dashboard, /admin/dashboard.html, and trailing characters/commas)
+app.get(['/admin/dashboard', '/admin/dashboard*'], (req, res) => {
     res.sendFile(path.join(__dirname, 'admin', 'dashboard.html'));
 });
 
