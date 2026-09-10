@@ -197,6 +197,27 @@ async function loadContentFromAPI() {
             ` : '').join('');
         }
 
+        // Update section display based on item count
+        const sectionMap = {
+            montage: 'montage',
+            reels: 'reels',
+            motionGraphics: 'motion-graphics',
+            graphicDesign: 'graphic-design',
+            thumbnails: 'thumbnails',
+            webDesign: 'web-design'
+        };
+
+        Object.keys(sectionMap).forEach(cat => {
+            const secEl = document.getElementById(sectionMap[cat]);
+            if (secEl) {
+                if (data[cat] && data[cat].length > 0) {
+                    secEl.style.display = 'block';
+                } else {
+                    secEl.style.display = 'none';
+                }
+            }
+        });
+
         // Setup all carousel navigations
         setupAllCarousels();
 
@@ -237,8 +258,8 @@ function setupAllCarousels() {
 
 function setupScrollReveal() {
     const observerOptions = {
-        threshold: 0.1,
-        rootMargin: "0px 0px -50px 0px"
+        threshold: 0.05,
+        rootMargin: "0px 0px 50px 0px"
     };
 
     const observer = new IntersectionObserver((entries) => {
@@ -250,21 +271,19 @@ function setupScrollReveal() {
         });
     }, observerOptions);
 
-    // Observe newly added elements too (delay slightly to ensures DOM is ready)
     setTimeout(() => {
-        const sections = document.querySelectorAll('.section, .card, .testimonial-card');
+        const sections = document.querySelectorAll('.section, .testimonial-card');
         sections.forEach(section => {
             section.classList.add('hidden');
             observer.observe(section);
         });
     }, 100);
 
-    // Initial CSS for reveal
     const style = document.createElement('style');
     style.innerHTML = `
-        .hidden { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease - out, transform 0.6s ease - out; }
+        .hidden { opacity: 0; transform: translateY(20px); transition: opacity 0.5s ease-out, transform 0.5s ease-out; }
         .visible { opacity: 1; transform: translateY(0); }
-`;
+    `;
     document.head.appendChild(style);
 }
 
