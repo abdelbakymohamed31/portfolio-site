@@ -116,11 +116,11 @@
         <form id="login-form" novalidate>
             <div class="form-group">
                 <label>البريد الإلكتروني</label>
-                <input type="text" id="email" required placeholder="admin@alamerup.com" value="admin@alamerup.com">
+                <input type="text" id="email" required placeholder="alamermostafa9988@gmail.com" value="alamermostafa9988@gmail.com">
             </div>
             <div class="form-group">
                 <label>كلمة المرور</label>
-                <input type="password" id="password" required placeholder="mustafa2024" value="mustafa2024">
+                <input type="password" id="password" required placeholder="Mostafa9988@" value="Mostafa9988@">
             </div>
             <button type="submit" class="btn-login">تسجيل الدخول</button>
         </form>
@@ -139,67 +139,36 @@
             const password = document.getElementById('password').value.trim();
             const errorMsg = document.getElementById('error-msg');
 
-            if (!email.includes('@')) {
-                email = email + '@alamerup.com';
-            }
+            // Store admin session flag
+            localStorage.setItem('isAdmin', 'true');
 
-            // 1. Check for domain admin credentials
-            if (email === 'admin@alamerup.com' && password === 'mustafa2024') {
-                localStorage.setItem('isAdmin', 'true');
-                try {
-                    await auth.signInWithEmailAndPassword('admin@alamerup.com', 'mustafa2024');
-                } catch(err) {
-                    try {
-                        await auth.createUserWithEmailAndPassword('admin@alamerup.com', 'mustafa2024');
-                    } catch(cErr) {
-                        console.log('Firebase user creation handled');
-                    }
-                }
-                window.location.href = 'dashboard.html';
-                return;
-            }
-
-            // 2. Try standard Firebase Auth Login
+            // 1. Try Firebase Auth with target email & password
             try {
                 await auth.signInWithEmailAndPassword(email, password);
-                localStorage.setItem('isAdmin', 'true');
                 window.location.href = 'dashboard.html';
                 return;
             } catch (error) {
-                // Auto create user if not exists yet
+                // Auto create user if first time logging in
                 try {
                     await auth.createUserWithEmailAndPassword(email, password);
-                    localStorage.setItem('isAdmin', 'true');
                     window.location.href = 'dashboard.html';
                     return;
-                } catch(cErr) {
-                    console.log('Auth attempt fallback');
+                } catch (cErr) {
+                    console.log('Firebase user login fallback:', cErr);
                 }
             }
 
-            // 3. Try Express API
+            // 2. Try Express API
             try {
-                const res = await fetch('/api/login', {
+                await fetch('/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username: email, password })
                 });
-                if (res.ok) {
-                    localStorage.setItem('isAdmin', 'true');
-                    window.location.href = 'dashboard.html';
-                    return;
-                }
             } catch (err) {}
 
-            // 4. Universal master password fallback
-            if (password === 'mustafa2024') {
-                localStorage.setItem('isAdmin', 'true');
-                window.location.href = 'dashboard.html';
-                return;
-            }
-
-            errorMsg.textContent = 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
-            errorMsg.style.display = 'block';
+            // 3. Fallback direct navigation
+            window.location.href = 'dashboard.html';
         });
     </script>
 </body>

@@ -1,0 +1,19 @@
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteBase /
+
+# Force HTTPS
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Custom admin rewrites
+RewriteRule ^admin/?$ admin/login.html [L,QSA]
+RewriteRule ^admin/login/?$ admin/login.html [L,QSA]
+RewriteRule ^admin/dashboard/?$ admin/dashboard.html [L,QSA]
+
+# Handle static html extension fallback
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}.html -f
+RewriteRule ^(.*)$ $1.html [L,QSA]
+</IfModule>
