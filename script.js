@@ -18,18 +18,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function loadContentFromAPI() {
     try {
-        // 1. Get Hero Video settings (with default fallback)
-        let heroVideo = 'dQw4w9WgXcQ';
+        // 1. Get Hero Video settings (autoplay enabled)
+        let heroVideo = '';
         try {
             const heroDoc = await db.collection('settings').doc('hero').get();
             if (heroDoc.exists && heroDoc.data().youtubeId) {
                 heroVideo = heroDoc.data().youtubeId;
             }
         } catch (err) {
-            console.log('Hero video fallback used');
+            console.log('Error fetching hero video setting:', err);
         }
 
-        // Load Hero Video (intro video at top of page)
+        // Load Hero Video (intro video autoplays on page load)
         const heroVideoPlayer = document.getElementById('hero-video-player');
         if (heroVideoPlayer && heroVideo) {
             if (heroVideo.startsWith('/uploads/')) {
@@ -63,7 +63,7 @@ async function loadContentFromAPI() {
                         : '<i class="fa-solid fa-volume-high"></i>';
                 });
             } else {
-                // YouTube Video
+                // YouTube Video with Autoplay enabled
                 heroVideoPlayer.innerHTML = `
                     <iframe id="hero-yt" 
                         src="https://www.youtube.com/embed/${heroVideo}?autoplay=1&mute=1&loop=1&playlist=${heroVideo}&controls=0&showinfo=0&rel=0&enablejsapi=1"
@@ -76,55 +76,24 @@ async function loadContentFromAPI() {
             }
         }
 
-        // 2. Fetch all portfolio items from Firestore with default fallbacks
+        // 2. Fetch user portfolio items strictly from Firestore (No default mocks)
         const data = {
-            montage: [],
-            reels: [
-                { id: 'def1', title: 'ريلز إعلاني 1', youtubeId: 'dQw4w9WgXcQ' },
-                { id: 'def2', title: 'ريلز احترافي 2', youtubeId: 'kJQP7kiw5Fk' },
-                { id: 'def3', title: 'ريلز سينمائي 3', youtubeId: 'RgKAFK5djSk' }
-            ],
-            motionGraphics: [
-                { id: 'def4', title: 'موشن جرافيك 1', youtubeId: 'NCK9MNF9_Vk' },
-                { id: 'def5', title: 'موشن جرافيك 2', youtubeId: 'cEY8KMwYQ0g' }
-            ],
-            graphicDesign: [
-                { id: 'def6', title: 'تصميم جرافيك 1', imageUrl: 'https://images.unsplash.com/photo-1626785774573-4b799315345d?w=400&h=300&fit=crop' },
-                { id: 'def7', title: 'تصميم جرافيك 2', imageUrl: 'https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=400&h=300&fit=crop' }
-            ],
-            thumbnails: [
-                { id: 'def8', title: 'صورة مصغرة 1', imageUrl: 'https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?w=400&h=225&fit=crop' },
-                { id: 'def9', title: 'صورة مصغرة 2', imageUrl: 'https://images.unsplash.com/photo-1611162618071-b39a2ec055fb?w=400&h=225&fit=crop' }
-            ],
-            webDesign: [
-                { id: 'def10', title: 'تصميم موقع تجاري', imageUrl: 'https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?w=400&h=300&fit=crop' },
-                { id: 'def11', title: 'تطبيق موبايل', imageUrl: 'https://images.unsplash.com/photo-1555421689-d68471e189f2?w=400&h=300&fit=crop' }
-            ]
+            montage: [], reels: [], motionGraphics: [], graphicDesign: [], thumbnails: [], webDesign: []
         };
 
         try {
             const snapshot = await db.collection('portfolio_items').get();
             if (!snapshot.empty) {
-                const fetchedData = {
-                    montage: [], reels: [], motionGraphics: [], graphicDesign: [], thumbnails: [], webDesign: []
-                };
                 snapshot.forEach(doc => {
                     const item = doc.data();
                     item.id = doc.id;
-                    if (fetchedData[item.category]) {
-                        fetchedData[item.category].push(item);
-                    }
-                });
-
-                // Override fallback with real user items for any category that has uploaded items
-                Object.keys(fetchedData).forEach(cat => {
-                    if (fetchedData[cat].length > 0) {
-                        data[cat] = fetchedData[cat];
+                    if (data[item.category]) {
+                        data[item.category].push(item);
                     }
                 });
             }
         } catch (err) {
-            console.log('Firestore fetch error, displaying default items');
+            console.log('Error fetching user portfolio items:', err);
         }
 
         // Sort items by custom order index if set, or fallback to createdAt
