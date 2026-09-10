@@ -135,36 +135,40 @@
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            const usernameInput = document.getElementById('email').value.trim().toLowerCase();
+            const usernameInput = document.getElementById('email').value.trim();
             const passwordInput = document.getElementById('password').value.trim();
             const errorMsg = document.getElementById('error-msg');
 
-            // 1. Direct validation for master admin password
-            if (passwordInput === 'mustafa2024' || usernameInput === 'admin' || usernameInput === 'admin@alamerup.com') {
-                if (passwordInput === 'mustafa2024') {
+            // 1. Try Express Backend /api/login POST request
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: usernameInput, password: passwordInput })
+                });
+                if (res.ok) {
                     localStorage.setItem('isAdmin', 'true');
-                    window.location.href = 'dashboard.html';
+                    window.location.href = '/admin/dashboard';
+                    return;
+                }
+            } catch (err) {
+                console.log('Express API login failed, attempting fallback', err);
+            }
+
+            // 2. Fallback check for master password
+            const isValidUser = (usernameInput === 'admin' || usernameInput === 'admin@alamerup.com' || usernameInput.toLowerCase().includes('admin'));
+            const isValidPass = (passwordInput === 'mustafa2024');
+
+            if (isValidUser || isValidPass) {
+                if (isValidPass) {
+                    localStorage.setItem('isAdmin', 'true');
+                    window.location.href = '/admin/dashboard';
                     return;
                 }
             }
 
-            // 2. Firebase Auth check
-            try {
-                let authEmail = usernameInput;
-                if (!authEmail.includes('@')) authEmail += '@alamerup.com';
-                await auth.signInWithEmailAndPassword(authEmail, passwordInput);
-                localStorage.setItem('isAdmin', 'true');
-                window.location.href = 'dashboard.html';
-            } catch (error) {
-                console.error("Firebase Login Error:", error);
-                if (passwordInput === 'mustafa2024') {
-                    localStorage.setItem('isAdmin', 'true');
-                    window.location.href = 'dashboard.html';
-                    return;
-                }
-                errorMsg.textContent = 'اسم المستخدم أو كلمة المرور غير صحيحة';
-                errorMsg.style.display = 'block';
-            }
+            errorMsg.textContent = 'اسم المستخدم أو كلمة المرور غير صحيحة';
+            errorMsg.style.display = 'block';
         });
     </script>
 </body>
