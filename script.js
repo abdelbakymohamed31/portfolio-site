@@ -69,8 +69,8 @@ async function loadContentFromAPI() {
             }
         }
 
-        // 2. Fetch all portfolio items from Firestore sorted by createdAt descending
-        const snapshot = await db.collection('portfolio_items').orderBy('createdAt', 'desc').get();
+        // 2. Fetch all portfolio items from Firestore
+        const snapshot = await db.collection('portfolio_items').get();
         
         const data = {
             montage: [], reels: [], motionGraphics: [], graphicDesign: [], thumbnails: [], webDesign: []
