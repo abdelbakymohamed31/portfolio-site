@@ -16,14 +16,27 @@ document.addEventListener('DOMContentLoaded', () => {
     setupSlowSmoothScroll();
 });
 
+// Helper function to extract clean 11-char YouTube ID from any format
+function extractYouTubeId(input) {
+    if (!input) return '';
+    const str = String(input).trim();
+    if (/^[a-zA-Z0-9_-]{11}$/.test(str)) {
+        return str;
+    }
+    const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+    const match = str.match(regex);
+    return match ? match[1] : '';
+}
+
 async function loadContentFromAPI() {
     try {
-        // 1. Get Hero Video settings (strictly from Firestore settings/hero)
+        // 1. Get Hero Video settings (strictly from Firestore settings/hero, no default fallbacks)
         let heroVideo = '';
         try {
             const heroDoc = await db.collection('settings').doc('hero').get();
-            if (heroDoc.exists && heroDoc.data().youtubeId) {
-                heroVideo = heroDoc.data().youtubeId;
+            if (heroDoc.exists && heroDoc.data()) {
+                const hData = heroDoc.data();
+                heroVideo = hData.youtubeId || hData.videoUrl || hData.url || '';
             }
         } catch (err) {
             console.log('Error fetching hero video setting:', err);
@@ -31,55 +44,35 @@ async function loadContentFromAPI() {
 
         // Load Hero Video (Only if added in control panel)
         const heroVideoPlayer = document.getElementById('hero-video-player');
-        if (heroVideoPlayer && heroVideo) {
-            if (heroVideo.startsWith('/uploads/')) {
+        if (heroVideoPlayer) {
+            if (!heroVideo) {
+                heroVideoPlayer.innerHTML = '';
+            } else if (heroVideo.startsWith('/uploads/') || heroVideo.endsWith('.mp4') || heroVideo.includes('cloudinary.com')) {
                 heroVideoPlayer.innerHTML = `
-                    <video id="hero-vid" autoplay loop muted playsinline>
+                    <video id="hero-vid" autoplay loop muted playsinline controls>
                         <source src="${heroVideo}" type="video/mp4">
+                        المتصفح لا يدعم تشغيل الفيديو
                     </video>
-                    <div class="hero-controls">
-                        <button id="hero-play-btn" title="تشغيل/إيقاف"><i class="fa-solid fa-pause"></i></button>
-                        <button id="hero-mute-btn" title="صوت"><i class="fa-solid fa-volume-xmark"></i></button>
-                    </div>
                 `;
                 const heroVid = document.getElementById('hero-vid');
-                const playBtn = document.getElementById('hero-play-btn');
-                const muteBtn = document.getElementById('hero-mute-btn');
-
                 if (heroVid) {
                     heroVid.play().catch(e => console.log('Autoplay handled:', e));
                 }
-
-                if (playBtn && heroVid) {
-                    playBtn.addEventListener('click', () => {
-                        if (heroVid.paused) {
-                            heroVid.play();
-                            playBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
-                        } else {
-                            heroVid.pause();
-                            playBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
-                        }
-                    });
-                }
-
-                if (muteBtn && heroVid) {
-                    muteBtn.addEventListener('click', () => {
-                        heroVid.muted = !heroVid.muted;
-                        muteBtn.innerHTML = heroVid.muted
-                            ? '<i class="fa-solid fa-volume-xmark"></i>'
-                            : '<i class="fa-solid fa-volume-high"></i>';
-                    });
-                }
             } else {
                 // YouTube Video added by user in control panel
-                heroVideoPlayer.innerHTML = `
-                    <iframe id="hero-yt" 
-                        src="https://www.youtube.com/embed/${heroVideo}?autoplay=1&mute=1&loop=1&playlist=${heroVideo}&controls=1&showinfo=0&rel=0&enablejsapi=1"
-                        frameborder="0" 
-                        allow="autoplay; encrypted-media; picture-in-picture" 
-                        allowfullscreen>
-                    </iframe>
-                `;
+                const yId = extractYouTubeId(heroVideo);
+                if (yId) {
+                    heroVideoPlayer.innerHTML = `
+                        <iframe id="hero-yt" 
+                            src="https://www.youtube.com/embed/${yId}?autoplay=1&mute=1&loop=1&playlist=${yId}&controls=1&rel=0&enablejsapi=1"
+                            frameborder="0" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                            allowfullscreen>
+                        </iframe>
+                    `;
+                } else {
+                    heroVideoPlayer.innerHTML = '';
+                }
             }
         }
 
@@ -115,135 +108,93 @@ async function loadContentFromAPI() {
             });
         });
 
+        // Helper renderer for video cards
+        function renderVideoCardHtml(item, cardClass, aspectClass, idPrefix, index) {
+            const rawUrl = item.videoUrl || item.youtubeId || item.url || '';
+            const yId = extractYouTubeId(rawUrl || item.youtubeId);
+
+            if (rawUrl.startsWith('/uploads/') || rawUrl.endsWith('.mp4') || rawUrl.includes('cloudinary.com')) {
+                return `
+                    <div class="card ${cardClass}">
+                        <div class="card-video ${aspectClass}">
+                            <video controls preload="metadata" playsinline>
+                                <source src="${rawUrl}" type="video/mp4">
+                                المتصفح لا يدعم تشغيل الفيديو
+                            </video>
+                        </div>
+                        <div class="motion-card-title">${item.title || ''}</div>
+                    </div>
+                `;
+            } else if (yId) {
+                return `
+                    <div class="card ${cardClass}">
+                        <div class="card-video ${aspectClass}">
+                            <iframe id="${idPrefix}-${index}" src="https://www.youtube.com/embed/${yId}?enablejsapi=1&rel=0"
+                                title="${item.title || ''}" frameborder="0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowfullscreen></iframe>
+                        </div>
+                        <div class="motion-card-title">${item.title || ''}</div>
+                    </div>
+                `;
+            }
+            return '';
+        }
+
         // Load Montage (Carousel - horizontal videos)
         const montageContainer = document.getElementById('montage-container');
-        if (montageContainer && data.montage) {
-            montageContainer.innerHTML = data.montage.map((item, i) => {
-                if (item.videoUrl) {
-                    return `
-                        <div class="card motion-card montage-card">
-                            <div class="card-video card-video-landscape">
-                                <video controls preload="metadata" playsinline>
-                                    <source src="${item.videoUrl}" type="video/mp4">
-                                    المتصفح لا يدعم تشغيل الفيديو
-                                </video>
-                            </div>
-                            <div class="motion-card-title">${item.title}</div>
-                        </div>
-                    `;
-                } else if (item.youtubeId) {
-                    return `
-                        <div class="card motion-card montage-card">
-                            <div class="card-video card-video-landscape">
-                                <iframe id="yt-montage-${i}" src="https://www.youtube.com/embed/${item.youtubeId}?enablejsapi=1"
-                                    title="${item.title}" frameborder="0"
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                    allowfullscreen></iframe>
-                            </div>
-                            <div class="motion-card-title">${item.title}</div>
-                        </div>
-                    `;
-                }
-                return '';
-            }).join('');
+        if (montageContainer) {
+            montageContainer.innerHTML = data.montage.map((item, i) =>
+                renderVideoCardHtml(item, 'motion-card montage-card', 'card-video-landscape', 'yt-montage', i)
+            ).join('');
         }
 
         // Load Reels (Carousel - vertical/portrait videos)
         const reelsContainer = document.getElementById('reels-container');
-        if (reelsContainer && data.reels) {
-            reelsContainer.innerHTML = data.reels.map((item, i) => {
-                if (item.videoUrl) {
-                    return `
-                        <div class="card reel-card">
-                            <div class="card-video card-video-portrait">
-                                <video controls preload="metadata" playsinline>
-                                    <source src="${item.videoUrl}" type="video/mp4">
-                                    المتصفح لا يدعم تشغيل الفيديو
-                                </video>
-                            </div>
-                            <div class="motion-card-title">${item.title}</div>
-                        </div>
-                    `;
-                } else if (item.youtubeId) {
-                    return `
-                        <div class="card reel-card">
-                            <div class="card-video card-video-portrait">
-                                <iframe id="yt-reel-${i}" src="https://www.youtube.com/embed/${item.youtubeId}?enablejsapi=1"
-                                    title="${item.title}" frameborder="0"
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                    allowfullscreen></iframe>
-                            </div>
-                            <div class="motion-card-title">${item.title}</div>
-                        </div>
-                    `;
-                }
-                return '';
-            }).join('');
+        if (reelsContainer) {
+            reelsContainer.innerHTML = data.reels.map((item, i) =>
+                renderVideoCardHtml(item, 'reel-card', 'card-video-portrait', 'yt-reel', i)
+            ).join('');
         }
 
         // Load Motion Graphics (Carousel)
         const motionContainer = document.getElementById('motion-container');
-        if (motionContainer && data.motionGraphics) {
-            motionContainer.innerHTML = data.motionGraphics.map((item, i) => {
-                if (item.videoUrl) {
-                    return `
-                        <div class="card motion-card">
-                            <div class="card-video">
-                                <video controls preload="metadata" playsinline>
-                                    <source src="${item.videoUrl}" type="video/mp4">
-                                    المتصفح لا يدعم تشغيل الفيديو
-                                </video>
-                            </div>
-                            <div class="motion-card-title">${item.title}</div>
-                        </div>
-                    `;
-                } else if (item.youtubeId) {
-                    return `
-                        <div class="card motion-card">
-                            <div class="card-video">
-                                <iframe id="yt-video-${i}" src="https://www.youtube.com/embed/${item.youtubeId}?enablejsapi=1"
-                                    title="${item.title}" frameborder="0"
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                    allowfullscreen></iframe>
-                            </div>
-                            <div class="motion-card-title">${item.title}</div>
-                        </div>
-                    `;
-                }
-                return '';
-            }).join('');
+        if (motionContainer) {
+            motionContainer.innerHTML = data.motionGraphics.map((item, i) =>
+                renderVideoCardHtml(item, 'motion-card', 'card-video-landscape', 'yt-video', i)
+            ).join('');
         }
 
         // Load Graphic Design (Carousel)
         const designContainer = document.getElementById('design-container');
-        if (designContainer && data.graphicDesign) {
-            designContainer.innerHTML = data.graphicDesign.map(item => `
+        if (designContainer) {
+            designContainer.innerHTML = data.graphicDesign.map(item => item.imageUrl ? `
                 <div class="design-card carousel-card">
-                    <img src="${item.imageUrl}" alt="${item.title}">
-                    <div class="carousel-card-title">${item.title}</div>
+                    <img src="${item.imageUrl}" alt="${item.title || ''}">
+                    <div class="carousel-card-title">${item.title || ''}</div>
                 </div>
-            `).join('');
+            ` : '').join('');
         }
 
         // Load Thumbnails (Carousel)
         const thumbContainer = document.getElementById('thumbnails-container');
-        if (thumbContainer && data.thumbnails) {
-            thumbContainer.innerHTML = data.thumbnails.map(item => `
+        if (thumbContainer) {
+            thumbContainer.innerHTML = data.thumbnails.map(item => item.imageUrl ? `
                 <div class="thumbnail-card carousel-card">
-                    <img src="${item.imageUrl}" alt="${item.title}">
+                    <img src="${item.imageUrl}" alt="${item.title || ''}">
                 </div>
-            `).join('');
+            ` : '').join('');
         }
 
         // Load Web Design (Carousel)
         const webContainer = document.getElementById('web-container');
-        if (webContainer && data.webDesign) {
-            webContainer.innerHTML = data.webDesign.map(item => `
+        if (webContainer) {
+            webContainer.innerHTML = data.webDesign.map(item => item.imageUrl ? `
                 <div class="web-card carousel-card">
-                    <img src="${item.imageUrl}" alt="${item.title}">
-                    <div class="web-card-title">${item.title}</div>
+                    <img src="${item.imageUrl}" alt="${item.title || ''}">
+                    <div class="web-card-title">${item.title || ''}</div>
                 </div>
-            `).join('');
+            ` : '').join('');
         }
 
         // Setup all carousel navigations
