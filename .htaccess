@@ -1,3 +1,8 @@
+# Disable Node.js Passenger Proxy for static files
+<IfModule mod_passenger.c>
+    PassengerEnabled off
+</IfModule>
+
 <IfModule mod_rewrite.c>
 RewriteEngine On
 RewriteBase /
@@ -6,12 +11,12 @@ RewriteBase /
 RewriteCond %{HTTPS} off
 RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
-# Custom admin rewrites
+# Direct static routes
 RewriteRule ^admin/?$ admin/login.html [L,QSA]
 RewriteRule ^admin/login/?$ admin/login.html [L,QSA]
 RewriteRule ^admin/dashboard/?$ admin/dashboard.html [L,QSA]
 
-# Handle static html extension fallback
+# Fallback for HTML files
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME}.html -f
