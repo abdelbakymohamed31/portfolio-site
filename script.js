@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function loadContentFromAPI() {
     try {
-        // 1. Get Hero Video settings (autoplay enabled)
+        // 1. Get Hero Video settings (strictly from Firestore settings/hero)
         let heroVideo = '';
         try {
             const heroDoc = await db.collection('settings').doc('hero').get();
@@ -29,17 +29,12 @@ async function loadContentFromAPI() {
             console.log('Error fetching hero video setting:', err);
         }
 
-        // Fallback default hero video if not explicitly set in settings yet
-        if (!heroVideo) {
-            heroVideo = 'dQw4w9WgXcQ';
-        }
-
-        // Load Hero Video (intro video autoplays on page load)
+        // Load Hero Video (Only if added in control panel)
         const heroVideoPlayer = document.getElementById('hero-video-player');
         if (heroVideoPlayer && heroVideo) {
             if (heroVideo.startsWith('/uploads/')) {
                 heroVideoPlayer.innerHTML = `
-                    <video id="hero-vid" autoplay loop muted playsinline style="width:100%;height:100%;object-fit:cover;">
+                    <video id="hero-vid" autoplay loop muted playsinline>
                         <source src="${heroVideo}" type="video/mp4">
                     </video>
                     <div class="hero-controls">
@@ -76,14 +71,13 @@ async function loadContentFromAPI() {
                     });
                 }
             } else {
-                // YouTube Video with Autoplay enabled
+                // YouTube Video added by user in control panel
                 heroVideoPlayer.innerHTML = `
                     <iframe id="hero-yt" 
                         src="https://www.youtube.com/embed/${heroVideo}?autoplay=1&mute=1&loop=1&playlist=${heroVideo}&controls=1&showinfo=0&rel=0&enablejsapi=1"
                         frameborder="0" 
                         allow="autoplay; encrypted-media; picture-in-picture" 
-                        allowfullscreen 
-                        style="width: 100%; height: 100%; object-fit: cover;">
+                        allowfullscreen>
                     </iframe>
                 `;
             }
