@@ -612,10 +612,10 @@
 
         // Auth check - التحقق من تسجيل الدخول
         auth.onAuthStateChanged((user) => {
-            if (!user) {
-                window.location.href = 'login.html';
-            } else {
+            if (user || localStorage.getItem('isAdmin') === 'true') {
                 loadContent();
+            } else {
+                window.location.href = 'login.html';
             }
         });
 

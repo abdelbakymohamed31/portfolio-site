@@ -135,38 +135,34 @@
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            let email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value.trim();
+            const usernameInput = document.getElementById('email').value.trim().toLowerCase();
+            const passwordInput = document.getElementById('password').value.trim();
             const errorMsg = document.getElementById('error-msg');
 
-            // Direct check for admin/mustafa2024
-            if ((email === 'admin' || email === 'admin@alamerup.com') && password === 'mustafa2024') {
-                try {
-                    await auth.signInWithEmailAndPassword('admin@alamerup.com', password);
-                } catch(err) {
-                    console.log('Firebase Auth bypass fallback used');
-                }
-                window.location.href = 'dashboard.html';
-                return;
-            }
-
-            // Standard Firebase Auth Login
-            let authEmail = email;
-            if (!authEmail.includes('@')) {
-                authEmail = authEmail + '@alamerup.com';
-            }
-
-            try {
-                await auth.signInWithEmailAndPassword(authEmail, password);
-                window.location.href = 'dashboard.html';
-            } catch (error) {
-                console.error("Login error:", error);
-                // Fallback for default password
-                if (password === 'mustafa2024') {
+            // 1. Direct validation for master admin password
+            if (passwordInput === 'mustafa2024' || usernameInput === 'admin' || usernameInput === 'admin@alamerup.com') {
+                if (passwordInput === 'mustafa2024') {
+                    localStorage.setItem('isAdmin', 'true');
                     window.location.href = 'dashboard.html';
                     return;
                 }
-                errorMsg.textContent = 'اسم المستخدم/البريد الإلكتروني أو كلمة المرور غير صحيحة';
+            }
+
+            // 2. Firebase Auth check
+            try {
+                let authEmail = usernameInput;
+                if (!authEmail.includes('@')) authEmail += '@alamerup.com';
+                await auth.signInWithEmailAndPassword(authEmail, passwordInput);
+                localStorage.setItem('isAdmin', 'true');
+                window.location.href = 'dashboard.html';
+            } catch (error) {
+                console.error("Firebase Login Error:", error);
+                if (passwordInput === 'mustafa2024') {
+                    localStorage.setItem('isAdmin', 'true');
+                    window.location.href = 'dashboard.html';
+                    return;
+                }
+                errorMsg.textContent = 'اسم المستخدم أو كلمة المرور غير صحيحة';
                 errorMsg.style.display = 'block';
             }
         });
