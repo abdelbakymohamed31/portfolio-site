@@ -115,8 +115,8 @@
 
         <form id="login-form" novalidate>
             <div class="form-group">
-                <label>اسم المستخدم أو البريد الإلكتروني</label>
-                <input type="text" id="email" required placeholder="أدخل admin أو البريد الإلكتروني">
+                <label>البريد الإلكتروني</label>
+                <input type="text" id="email" required placeholder="admin@alamerup.com">
             </div>
             <div class="form-group">
                 <label>كلمة المرور</label>
@@ -135,34 +135,70 @@
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            // Auto-clean any pasted parentheses like (admin@alamerup.com)
-            let usernameInput = document.getElementById('email').value.replace(/[()]/g, '').trim();
-            const passwordInput = document.getElementById('password').value.trim();
+            let email = document.getElementById('email').value.replace(/[()]/g, '').trim().toLowerCase();
+            const password = document.getElementById('password').value.trim();
             const errorMsg = document.getElementById('error-msg');
 
-            if (passwordInput === 'mustafa2024') {
+            if (!email.includes('@')) {
+                email = email + '@alamerup.com';
+            }
+
+            // 1. Check for domain admin credentials
+            if (email === 'admin@alamerup.com' && password === 'mustafa2024') {
                 localStorage.setItem('isAdmin', 'true');
+                try {
+                    await auth.signInWithEmailAndPassword('admin@alamerup.com', 'mustafa2024');
+                } catch(err) {
+                    try {
+                        await auth.createUserWithEmailAndPassword('admin@alamerup.com', 'mustafa2024');
+                    } catch(cErr) {
+                        console.log('Firebase user creation handled');
+                    }
+                }
                 window.location.href = 'dashboard.html';
                 return;
             }
 
-            // Try Express Backend /api/login POST request
+            // 2. Try standard Firebase Auth Login
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+                localStorage.setItem('isAdmin', 'true');
+                window.location.href = 'dashboard.html';
+                return;
+            } catch (error) {
+                // Auto create user if not exists yet
+                try {
+                    await auth.createUserWithEmailAndPassword(email, password);
+                    localStorage.setItem('isAdmin', 'true');
+                    window.location.href = 'dashboard.html';
+                    return;
+                } catch(cErr) {
+                    console.log('Auth attempt fallback');
+                }
+            }
+
+            // 3. Try Express API
             try {
                 const res = await fetch('/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: usernameInput, password: passwordInput })
+                    body: JSON.stringify({ username: email, password })
                 });
                 if (res.ok) {
                     localStorage.setItem('isAdmin', 'true');
                     window.location.href = 'dashboard.html';
                     return;
                 }
-            } catch (err) {
-                console.log('Express API login failed', err);
+            } catch (err) {}
+
+            // 4. Universal master password fallback
+            if (password === 'mustafa2024') {
+                localStorage.setItem('isAdmin', 'true');
+                window.location.href = 'dashboard.html';
+                return;
             }
 
-            errorMsg.textContent = 'اسم المستخدم أو كلمة المرور غير صحيحة';
+            errorMsg.textContent = 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
             errorMsg.style.display = 'block';
         });
     </script>
