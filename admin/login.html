@@ -113,7 +113,7 @@
 
         <div class="error-message" id="error-msg"></div>
 
-        <form id="login-form">
+        <form id="login-form" novalidate>
             <div class="form-group">
                 <label>اسم المستخدم أو البريد الإلكتروني</label>
                 <input type="text" id="email" required placeholder="أدخل admin أو البريد الإلكتروني">
@@ -135,11 +135,18 @@
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            const usernameInput = document.getElementById('email').value.trim();
+            // Auto-clean any pasted parentheses like (admin@alamerup.com)
+            let usernameInput = document.getElementById('email').value.replace(/[()]/g, '').trim();
             const passwordInput = document.getElementById('password').value.trim();
             const errorMsg = document.getElementById('error-msg');
 
-            // 1. Try Express Backend /api/login POST request
+            if (passwordInput === 'mustafa2024') {
+                localStorage.setItem('isAdmin', 'true');
+                window.location.href = 'dashboard.html';
+                return;
+            }
+
+            // Try Express Backend /api/login POST request
             try {
                 const res = await fetch('/api/login', {
                     method: 'POST',
@@ -148,23 +155,11 @@
                 });
                 if (res.ok) {
                     localStorage.setItem('isAdmin', 'true');
-                    window.location.href = '/admin/dashboard';
+                    window.location.href = 'dashboard.html';
                     return;
                 }
             } catch (err) {
-                console.log('Express API login failed, attempting fallback', err);
-            }
-
-            // 2. Fallback check for master password
-            const isValidUser = (usernameInput === 'admin' || usernameInput === 'admin@alamerup.com' || usernameInput.toLowerCase().includes('admin'));
-            const isValidPass = (passwordInput === 'mustafa2024');
-
-            if (isValidUser || isValidPass) {
-                if (isValidPass) {
-                    localStorage.setItem('isAdmin', 'true');
-                    window.location.href = '/admin/dashboard';
-                    return;
-                }
+                console.log('Express API login failed', err);
             }
 
             errorMsg.textContent = 'اسم المستخدم أو كلمة المرور غير صحيحة';
