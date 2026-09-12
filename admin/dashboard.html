@@ -745,21 +745,17 @@
 
         // Extract YouTube ID from any URL format
         function extractYouTubeId(input) {
-            if (!input) return input;
-            if (/^[a-zA-Z0-9_-]{11}$/.test(input.trim())) {
-                return input.trim();
+            if (!input) return '';
+            const str = String(input).trim();
+            if (/^[a-zA-Z0-9_-]{11}$/.test(str)) {
+                return str;
             }
-            const patterns = [
-                /(?:youtube\.com\/watch\?v=|youtube\.com\/embed\/|youtube\.com\/v\/|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
-                /^.*(?:youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/
-            ];
-            for (const pattern of patterns) {
-                const match = input.match(pattern);
-                if (match && match[1]) {
-                    return match[1];
-                }
+            const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts|live)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+            const match = str.match(regex);
+            if (match && match[1]) {
+                return match[1];
             }
-            return input.trim();
+            return str;
         }
 
         // Upload helper with real-time percentage (%) and MB progress tracking
@@ -808,7 +804,7 @@
                         detailsText.textContent = `${loadedMB} MB من ${totalSizeMB} MB`;
 
                         if (percent === 100) {
-                            statusText.textContent = 'تم اكتمل الرفع 100% - جاري التجهيز للفظ... ⏳';
+                            statusText.textContent = 'تم اكتمل الرفع 100% - جاري التجهيز للحفظ... ⏳';
                             statusText.style.color = '#fbbf24';
                         } else {
                             statusText.textContent = `جاري الرفع... (${percent}%) ⌛`;
@@ -867,6 +863,13 @@
 
                 try {
                     await db.collection('settings').doc('hero').set({ youtubeId });
+                    try {
+                        await fetch('/api/hero-video', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ youtubeId })
+                        });
+                    } catch (e) {}
                     showSuccess();
                     heroForm.reset();
                     loadContent();
@@ -925,6 +928,7 @@
                                 return;
                             }
                             newItem.youtubeId = youtubeId;
+                            newItem.videoUrl = videoUrl;
                         } else if (category === 'webDesign') {
                             const imageUrl = form.querySelector('input[name="imageUrl"]').value;
                             newItem.imageUrl = imageUrl;
@@ -932,6 +936,15 @@
 
                         // Save in Firestore
                         await db.collection('portfolio_items').add(newItem);
+
+                        // Also post to local express server API as dual-sync
+                        try {
+                            await fetch(`/api/content/${category}`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(newItem)
+                            });
+                        } catch (e) {}
                         
                         showSuccess();
                         form.reset();

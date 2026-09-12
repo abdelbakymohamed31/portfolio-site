@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
 
-    // 1. Load Content from API
+    // 1. Load Content from API / Firestore
     loadContentFromAPI();
 
     // 2. Scroll Reveal Animation
@@ -16,21 +16,24 @@ document.addEventListener('DOMContentLoaded', () => {
     setupSlowSmoothScroll();
 });
 
-// Helper function to extract clean 11-char YouTube ID from any format
+// Helper function to extract clean 11-char YouTube ID from any format or URL
 function extractYouTubeId(input) {
     if (!input) return '';
     const str = String(input).trim();
     if (/^[a-zA-Z0-9_-]{11}$/.test(str)) {
         return str;
     }
-    const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+    const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts|live)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
     const match = str.match(regex);
-    return match ? match[1] : '';
+    if (match && match[1]) {
+        return match[1];
+    }
+    return str;
 }
 
 async function loadContentFromAPI() {
     try {
-        // 1. Get Hero Video settings (strictly from Firestore settings/hero, no default fallbacks)
+        // 1. Get Hero Video settings (from Firestore or local API fallback)
         let heroVideo = '';
         try {
             const heroDoc = await db.collection('settings').doc('hero').get();
@@ -39,15 +42,24 @@ async function loadContentFromAPI() {
                 heroVideo = hData.youtubeId || hData.videoUrl || hData.url || '';
             }
         } catch (err) {
-            console.log('Error fetching hero video setting:', err);
+            console.log('Firestore hero fetch error:', err);
         }
 
-        // Load Hero Video (Only if added in control panel)
+        // Fallback to local API if Firestore was empty
+        if (!heroVideo) {
+            try {
+                const res = await fetch('/api/content');
+                if (res.ok) {
+                    const apiData = await res.json();
+                    if (apiData.heroVideo) heroVideo = apiData.heroVideo;
+                }
+            } catch (e) {}
+        }
+
+        // Load Hero Video Player
         const heroVideoPlayer = document.getElementById('hero-video-player');
-        if (heroVideoPlayer) {
-            if (!heroVideo) {
-                heroVideoPlayer.innerHTML = '';
-            } else if (heroVideo.startsWith('/uploads/') || heroVideo.endsWith('.mp4') || heroVideo.includes('cloudinary.com')) {
+        if (heroVideoPlayer && heroVideo) {
+            if (heroVideo.startsWith('/uploads/') || heroVideo.endsWith('.mp4') || heroVideo.includes('cloudinary.com')) {
                 heroVideoPlayer.innerHTML = `
                     <video id="hero-vid" autoplay loop muted playsinline controls>
                         <source src="${heroVideo}" type="video/mp4">
@@ -59,7 +71,6 @@ async function loadContentFromAPI() {
                     heroVid.play().catch(e => console.log('Autoplay handled:', e));
                 }
             } else {
-                // YouTube Video added by user in control panel
                 const yId = extractYouTubeId(heroVideo);
                 if (yId) {
                     heroVideoPlayer.innerHTML = `
@@ -70,13 +81,11 @@ async function loadContentFromAPI() {
                             allowfullscreen>
                         </iframe>
                     `;
-                } else {
-                    heroVideoPlayer.innerHTML = '';
                 }
             }
         }
 
-        // 2. Fetch user portfolio items strictly from Firestore (No default mocks)
+        // 2. Fetch user portfolio items from Firestore & Local API
         const data = {
             montage: [], reels: [], motionGraphics: [], graphicDesign: [], thumbnails: [], webDesign: []
         };
@@ -93,10 +102,26 @@ async function loadContentFromAPI() {
                 });
             }
         } catch (err) {
-            console.log('Error fetching user portfolio items:', err);
+            console.log('Firestore portfolio fetch error:', err);
         }
 
-        // Sort items by custom order index if set, or fallback to createdAt
+        // Fallback to local API endpoint if Firestore returned 0 items
+        const totalItemsCount = Object.values(data).reduce((acc, arr) => acc + arr.length, 0);
+        if (totalItemsCount === 0) {
+            try {
+                const res = await fetch('/api/content');
+                if (res.ok) {
+                    const apiData = await res.json();
+                    Object.keys(data).forEach(cat => {
+                        if (apiData[cat] && Array.isArray(apiData[cat])) {
+                            data[cat] = apiData[cat];
+                        }
+                    });
+                }
+            } catch (e) {}
+        }
+
+        // Sort items by custom order index if set
         Object.keys(data).forEach(cat => {
             data[cat].sort((a, b) => {
                 if (a.order !== undefined && b.order !== undefined) {
@@ -197,26 +222,13 @@ async function loadContentFromAPI() {
             ` : '').join('');
         }
 
-        // Update section display based on item count
-        const sectionMap = {
-            montage: 'montage',
-            reels: 'reels',
-            motionGraphics: 'motion-graphics',
-            graphicDesign: 'graphic-design',
-            thumbnails: 'thumbnails',
-            webDesign: 'web-design'
-        };
+        // Setup all carousel navigations
+        setupAllCarousels();
 
-        Object.keys(sectionMap).forEach(cat => {
-            const secEl = document.getElementById(sectionMap[cat]);
-            if (secEl) {
-                if (data[cat] && data[cat].length > 0) {
-                    secEl.style.display = 'block';
-                } else {
-                    secEl.style.display = 'none';
-                }
-            }
-        });
+    } catch (error) {
+        console.error('Error loading content:', error);
+    }
+}
 
         // Setup all carousel navigations
         setupAllCarousels();
