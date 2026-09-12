@@ -3,11 +3,49 @@
     "username": "admin",
     "password": "mustafa2024"
   },
-  "montage": [],
+  "heroVideo": "wxn3ow9PS6w",
+  "montage": [
+    {
+      "id": "UCcZwx554H30YdOrcm3z",
+      "title": "1",
+      "category": "montage",
+      "youtubeId": "RQ-he2OKirM",
+      "order": 0
+    },
+    {
+      "id": "ElvDfoFitrS87H4kCOPQ",
+      "title": "2",
+      "category": "montage",
+      "youtubeId": "RQ-he2OKirM",
+      "order": 1
+    },
+    {
+      "id": "ZhW6hN49UcE0E5asFAFP",
+      "title": "1",
+      "category": "montage",
+      "youtubeId": "il8hzf1_Xrs",
+      "order": 2
+    }
+  ],
   "reels": [],
-  "motionGraphics": [],
+  "motionGraphics": [
+    {
+      "id": "xwbA5Fb0rDgLpMU4jN1z",
+      "title": "ض",
+      "category": "motionGraphics",
+      "youtubeId": "wxn3ow9PS6w",
+      "order": 0
+    }
+  ],
   "graphicDesign": [],
-  "thumbnails": [],
-  "webDesign": [],
-  "heroVideo": ""
+  "thumbnails": [
+    {
+      "id": "GU8aZKPyOwr6AWcMOTeO",
+      "title": "2",
+      "category": "thumbnails",
+      "imageUrl": "https://res.cloudinary.com/pqr9gfxr/image/upload/v1789069265/jbzzjzfycb5fidcl3ibj.jpg",
+      "order": 0
+    }
+  ],
+  "webDesign": []
 }

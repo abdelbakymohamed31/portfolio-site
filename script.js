@@ -33,92 +33,62 @@ function extractYouTubeId(input) {
 
 async function loadContentFromAPI() {
     try {
-        // 1. Get Hero Video settings (from Firestore or local API fallback)
         let heroVideo = '';
+        let data = {
+            montage: [], reels: [], motionGraphics: [], graphicDesign: [], thumbnails: [], webDesign: []
+        };
+
+        // 1. Fetch from Local Server API first (Fast, reliable, and bypasses Firestore Auth locks)
+        try {
+            const res = await fetch('/api/content');
+            if (res.ok) {
+                const apiData = await res.json();
+                if (apiData.heroVideo) heroVideo = apiData.heroVideo;
+                Object.keys(data).forEach(cat => {
+                    if (apiData[cat] && Array.isArray(apiData[cat])) {
+                        data[cat] = apiData[cat];
+                    }
+                });
+            }
+        } catch (e) {
+            console.log('API fetch fallback error:', e);
+        }
+
+        // 2. Fetch from Firestore for real-time additions if accessible
         try {
             const heroDoc = await db.collection('settings').doc('hero').get();
             if (heroDoc.exists && heroDoc.data()) {
                 const hData = heroDoc.data();
-                heroVideo = hData.youtubeId || hData.videoUrl || hData.url || '';
+                if (hData.youtubeId || hData.videoUrl || hData.url) {
+                    heroVideo = hData.youtubeId || hData.videoUrl || hData.url;
+                }
             }
         } catch (err) {
             console.log('Firestore hero fetch error:', err);
         }
 
-        // Fallback to local API if Firestore was empty
-        if (!heroVideo) {
-            try {
-                const res = await fetch('/api/content');
-                if (res.ok) {
-                    const apiData = await res.json();
-                    if (apiData.heroVideo) heroVideo = apiData.heroVideo;
-                }
-            } catch (e) {}
-        }
-
-        // Load Hero Video Player
-        const heroVideoPlayer = document.getElementById('hero-video-player');
-        if (heroVideoPlayer && heroVideo) {
-            if (heroVideo.startsWith('/uploads/') || heroVideo.endsWith('.mp4') || heroVideo.includes('cloudinary.com')) {
-                heroVideoPlayer.innerHTML = `
-                    <video id="hero-vid" autoplay loop muted playsinline controls>
-                        <source src="${heroVideo}" type="video/mp4">
-                        المتصفح لا يدعم تشغيل الفيديو
-                    </video>
-                `;
-                const heroVid = document.getElementById('hero-vid');
-                if (heroVid) {
-                    heroVid.play().catch(e => console.log('Autoplay handled:', e));
-                }
-            } else {
-                const yId = extractYouTubeId(heroVideo);
-                if (yId) {
-                    heroVideoPlayer.innerHTML = `
-                        <iframe id="hero-yt" 
-                            src="https://www.youtube.com/embed/${yId}?autoplay=1&mute=1&loop=1&playlist=${yId}&controls=1&rel=0&enablejsapi=1"
-                            frameborder="0" 
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                            allowfullscreen>
-                        </iframe>
-                    `;
-                }
-            }
-        }
-
-        // 2. Fetch user portfolio items from Firestore & Local API
-        const data = {
-            montage: [], reels: [], motionGraphics: [], graphicDesign: [], thumbnails: [], webDesign: []
-        };
-
         try {
             const snapshot = await db.collection('portfolio_items').get();
             if (!snapshot.empty) {
+                const fsData = {
+                    montage: [], reels: [], motionGraphics: [], graphicDesign: [], thumbnails: [], webDesign: []
+                };
                 snapshot.forEach(doc => {
                     const item = doc.data();
                     item.id = doc.id;
-                    if (data[item.category]) {
-                        data[item.category].push(item);
+                    if (fsData[item.category]) {
+                        fsData[item.category].push(item);
+                    }
+                });
+                // Override with Firestore items if available
+                Object.keys(fsData).forEach(cat => {
+                    if (fsData[cat].length > 0) {
+                        data[cat] = fsData[cat];
                     }
                 });
             }
         } catch (err) {
             console.log('Firestore portfolio fetch error:', err);
-        }
-
-        // Fallback to local API endpoint if Firestore returned 0 items
-        const totalItemsCount = Object.values(data).reduce((acc, arr) => acc + arr.length, 0);
-        if (totalItemsCount === 0) {
-            try {
-                const res = await fetch('/api/content');
-                if (res.ok) {
-                    const apiData = await res.json();
-                    Object.keys(data).forEach(cat => {
-                        if (apiData[cat] && Array.isArray(apiData[cat])) {
-                            data[cat] = apiData[cat];
-                        }
-                    });
-                }
-            } catch (e) {}
         }
 
         // Sort items by custom order index if set
