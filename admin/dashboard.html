@@ -735,6 +735,13 @@
 
             try {
                 await batch.commit();
+                try {
+                    await fetch(`/api/reorder/${category}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ items: list })
+                    });
+                } catch (e) {}
                 showSuccess('تم تغيير ترتيب العرض بنجاح!');
                 loadContent();
             } catch (error) {

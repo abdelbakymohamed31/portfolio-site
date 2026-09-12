@@ -38,7 +38,7 @@ async function loadContentFromAPI() {
             montage: [], reels: [], motionGraphics: [], graphicDesign: [], thumbnails: [], webDesign: []
         };
 
-        // 1. Fetch from Local Server API first (Fast, reliable, and bypasses Firestore Auth locks)
+        // 1. Fetch & Render INSTANTLY from Local Server API (0 Lag, 0 Delay!)
         try {
             const res = await fetch('/api/content');
             if (res.ok) {
@@ -49,155 +49,187 @@ async function loadContentFromAPI() {
                         data[cat] = apiData[cat];
                     }
                 });
+                renderHeroVideo(heroVideo);
+                renderAllCategories(data);
             }
         } catch (e) {
-            console.log('API fetch fallback error:', e);
+            console.log('API fetch error:', e);
         }
 
-        // 2. Fetch from Firestore for real-time additions if accessible
-        try {
-            const heroDoc = await db.collection('settings').doc('hero').get();
-            if (heroDoc.exists && heroDoc.data()) {
-                const hData = heroDoc.data();
-                if (hData.youtubeId || hData.videoUrl || hData.url) {
-                    heroVideo = hData.youtubeId || hData.videoUrl || hData.url;
-                }
-            }
-        } catch (err) {
-            console.log('Firestore hero fetch error:', err);
-        }
-
-        try {
-            const snapshot = await db.collection('portfolio_items').get();
-            if (!snapshot.empty) {
-                const fsData = {
-                    montage: [], reels: [], motionGraphics: [], graphicDesign: [], thumbnails: [], webDesign: []
-                };
-                snapshot.forEach(doc => {
-                    const item = doc.data();
-                    item.id = doc.id;
-                    if (fsData[item.category]) {
-                        fsData[item.category].push(item);
+        // 2. Asynchronous Background Firestore Sync (Doesn't block page render!)
+        (async () => {
+            try {
+                const heroDoc = await db.collection('settings').doc('hero').get();
+                if (heroDoc.exists && heroDoc.data()) {
+                    const hData = heroDoc.data();
+                    const newHero = hData.youtubeId || hData.videoUrl || hData.url || '';
+                    if (newHero && newHero !== heroVideo) {
+                        heroVideo = newHero;
+                        renderHeroVideo(heroVideo);
                     }
-                });
-                // Override with Firestore items if available
-                Object.keys(fsData).forEach(cat => {
-                    if (fsData[cat].length > 0) {
-                        data[cat] = fsData[cat];
-                    }
-                });
-            }
-        } catch (err) {
-            console.log('Firestore portfolio fetch error:', err);
-        }
-
-        // Sort items by custom order index if set
-        Object.keys(data).forEach(cat => {
-            data[cat].sort((a, b) => {
-                if (a.order !== undefined && b.order !== undefined) {
-                    return a.order - b.order;
                 }
-                if (a.order !== undefined) return -1;
-                if (b.order !== undefined) return 1;
-                return 0;
-            });
-        });
+            } catch (err) {}
 
-        // Helper renderer for video cards
-        function renderVideoCardHtml(item, cardClass, aspectClass, idPrefix, index) {
-            const rawUrl = item.videoUrl || item.youtubeId || item.url || '';
-            const yId = extractYouTubeId(rawUrl || item.youtubeId);
-
-            if (rawUrl.startsWith('/uploads/') || rawUrl.endsWith('.mp4') || rawUrl.includes('cloudinary.com')) {
-                return `
-                    <div class="card ${cardClass}">
-                        <div class="card-video ${aspectClass}">
-                            <video controls preload="metadata" playsinline>
-                                <source src="${rawUrl}" type="video/mp4">
-                                المتصفح لا يدعم تشغيل الفيديو
-                            </video>
-                        </div>
-                        <div class="motion-card-title">${item.title || ''}</div>
-                    </div>
-                `;
-            } else if (yId) {
-                return `
-                    <div class="card ${cardClass}">
-                        <div class="card-video ${aspectClass}">
-                            <iframe id="${idPrefix}-${index}" src="https://www.youtube.com/embed/${yId}?enablejsapi=1&rel=0"
-                                title="${item.title || ''}" frameborder="0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowfullscreen></iframe>
-                        </div>
-                        <div class="motion-card-title">${item.title || ''}</div>
-                    </div>
-                `;
-            }
-            return '';
-        }
-
-        // Load Montage (Carousel - horizontal videos)
-        const montageContainer = document.getElementById('montage-container');
-        if (montageContainer) {
-            montageContainer.innerHTML = data.montage.map((item, i) =>
-                renderVideoCardHtml(item, 'motion-card montage-card', 'card-video-landscape', 'yt-montage', i)
-            ).join('');
-        }
-
-        // Load Reels (Carousel - vertical/portrait videos)
-        const reelsContainer = document.getElementById('reels-container');
-        if (reelsContainer) {
-            reelsContainer.innerHTML = data.reels.map((item, i) =>
-                renderVideoCardHtml(item, 'reel-card', 'card-video-portrait', 'yt-reel', i)
-            ).join('');
-        }
-
-        // Load Motion Graphics (Carousel)
-        const motionContainer = document.getElementById('motion-container');
-        if (motionContainer) {
-            motionContainer.innerHTML = data.motionGraphics.map((item, i) =>
-                renderVideoCardHtml(item, 'motion-card', 'card-video-landscape', 'yt-video', i)
-            ).join('');
-        }
-
-        // Load Graphic Design (Carousel)
-        const designContainer = document.getElementById('design-container');
-        if (designContainer) {
-            designContainer.innerHTML = data.graphicDesign.map(item => item.imageUrl ? `
-                <div class="design-card carousel-card">
-                    <img src="${item.imageUrl}" alt="${item.title || ''}">
-                    <div class="carousel-card-title">${item.title || ''}</div>
-                </div>
-            ` : '').join('');
-        }
-
-        // Load Thumbnails (Carousel)
-        const thumbContainer = document.getElementById('thumbnails-container');
-        if (thumbContainer) {
-            thumbContainer.innerHTML = data.thumbnails.map(item => item.imageUrl ? `
-                <div class="thumbnail-card carousel-card">
-                    <img src="${item.imageUrl}" alt="${item.title || ''}">
-                </div>
-            ` : '').join('');
-        }
-
-        // Load Web Design (Carousel)
-        const webContainer = document.getElementById('web-container');
-        if (webContainer) {
-            webContainer.innerHTML = data.webDesign.map(item => item.imageUrl ? `
-                <div class="web-card carousel-card">
-                    <img src="${item.imageUrl}" alt="${item.title || ''}">
-                    <div class="web-card-title">${item.title || ''}</div>
-                </div>
-            ` : '').join('');
-        }
-
-        // Setup all carousel navigations
-        setupAllCarousels();
+            try {
+                const snapshot = await db.collection('portfolio_items').get();
+                if (!snapshot.empty) {
+                    const fsData = {
+                        montage: [], reels: [], motionGraphics: [], graphicDesign: [], thumbnails: [], webDesign: []
+                    };
+                    snapshot.forEach(doc => {
+                        const item = doc.data();
+                        item.id = doc.id;
+                        if (fsData[item.category]) {
+                            fsData[item.category].push(item);
+                        }
+                    });
+                    renderAllCategories(fsData);
+                }
+            } catch (err) {}
+        })();
 
     } catch (error) {
         console.error('Error loading content:', error);
     }
+}
+
+// Render Hero Video
+function renderHeroVideo(heroVideo) {
+    const heroVideoPlayer = document.getElementById('hero-video-player');
+    if (!heroVideoPlayer) return;
+    if (!heroVideo) {
+        heroVideoPlayer.innerHTML = '';
+        return;
+    }
+
+    if (heroVideo.startsWith('/uploads/') || heroVideo.endsWith('.mp4') || heroVideo.includes('cloudinary.com')) {
+        heroVideoPlayer.innerHTML = `
+            <video id="hero-vid" autoplay loop muted playsinline controls>
+                <source src="${heroVideo}" type="video/mp4">
+                المتصفح لا يدعم تشغيل الفيديو
+            </video>
+        `;
+        const heroVid = document.getElementById('hero-vid');
+        if (heroVid) {
+            heroVid.play().catch(e => console.log('Autoplay handled:', e));
+        }
+    } else {
+        const yId = extractYouTubeId(heroVideo);
+        if (yId) {
+            heroVideoPlayer.innerHTML = `
+                <iframe id="hero-yt" 
+                    src="https://www.youtube.com/embed/${yId}?autoplay=1&mute=1&loop=1&playlist=${yId}&controls=1&rel=0&enablejsapi=1"
+                    frameborder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowfullscreen>
+                </iframe>
+            `;
+        }
+    }
+}
+
+// Render All Categories with strict order sorting
+function renderAllCategories(data) {
+    // Sort items by order property strictly (0, 1, 2...)
+    Object.keys(data).forEach(cat => {
+        data[cat].sort((a, b) => {
+            const orderA = a.order !== undefined ? Number(a.order) : 999;
+            const orderB = b.order !== undefined ? Number(b.order) : 999;
+            return orderA - orderB;
+        });
+    });
+
+    // Helper renderer for video cards
+    function renderVideoCardHtml(item, cardClass, aspectClass, idPrefix, index) {
+        const rawUrl = item.videoUrl || item.youtubeId || item.url || '';
+        const yId = extractYouTubeId(rawUrl || item.youtubeId);
+
+        if (rawUrl.startsWith('/uploads/') || rawUrl.endsWith('.mp4') || rawUrl.includes('cloudinary.com')) {
+            return `
+                <div class="card ${cardClass}">
+                    <div class="card-video ${aspectClass}">
+                        <video controls preload="metadata" playsinline>
+                            <source src="${rawUrl}" type="video/mp4">
+                            المتصفح لا يدعم تشغيل الفيديو
+                        </video>
+                    </div>
+                    <div class="motion-card-title">${item.title || ''}</div>
+                </div>
+            `;
+        } else if (yId) {
+            return `
+                <div class="card ${cardClass}">
+                    <div class="card-video ${aspectClass}">
+                        <iframe id="${idPrefix}-${index}" src="https://www.youtube.com/embed/${yId}?enablejsapi=1&rel=0"
+                            title="${item.title || ''}" frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen></iframe>
+                    </div>
+                    <div class="motion-card-title">${item.title || ''}</div>
+                </div>
+            `;
+        }
+        return '';
+    }
+
+    // Load Montage (Carousel - horizontal videos)
+    const montageContainer = document.getElementById('montage-container');
+    if (montageContainer) {
+        montageContainer.innerHTML = data.montage.map((item, i) =>
+            renderVideoCardHtml(item, 'motion-card montage-card', 'card-video-landscape', 'yt-montage', i)
+        ).join('');
+    }
+
+    // Load Reels (Carousel - vertical/portrait videos)
+    const reelsContainer = document.getElementById('reels-container');
+    if (reelsContainer) {
+        reelsContainer.innerHTML = data.reels.map((item, i) =>
+            renderVideoCardHtml(item, 'reel-card', 'card-video-portrait', 'yt-reel', i)
+        ).join('');
+    }
+
+    // Load Motion Graphics (Carousel)
+    const motionContainer = document.getElementById('motion-container');
+    if (motionContainer) {
+        motionContainer.innerHTML = data.motionGraphics.map((item, i) =>
+            renderVideoCardHtml(item, 'motion-card', 'card-video-landscape', 'yt-video', i)
+        ).join('');
+    }
+
+    // Load Graphic Design (Carousel)
+    const designContainer = document.getElementById('design-container');
+    if (designContainer) {
+        designContainer.innerHTML = data.graphicDesign.map(item => item.imageUrl ? `
+            <div class="design-card carousel-card">
+                <img src="${item.imageUrl}" alt="${item.title || ''}">
+                <div class="carousel-card-title">${item.title || ''}</div>
+            </div>
+        ` : '').join('');
+    }
+
+    // Load Thumbnails (Carousel)
+    const thumbContainer = document.getElementById('thumbnails-container');
+    if (thumbContainer) {
+        thumbContainer.innerHTML = data.thumbnails.map(item => item.imageUrl ? `
+            <div class="thumbnail-card carousel-card">
+                <img src="${item.imageUrl}" alt="${item.title || ''}">
+            </div>
+        ` : '').join('');
+    }
+
+    // Load Web Design (Carousel)
+    const webContainer = document.getElementById('web-container');
+    if (webContainer) {
+        webContainer.innerHTML = data.webDesign.map(item => item.imageUrl ? `
+            <div class="web-card carousel-card">
+                <img src="${item.imageUrl}" alt="${item.title || ''}">
+                <div class="web-card-title">${item.title || ''}</div>
+            </div>
+        ` : '').join('');
+    }
+
+    // Setup all carousel navigations
+    setupAllCarousels();
 }
 
 // Setup all Carousel Navigations

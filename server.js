@@ -166,6 +166,19 @@ app.post('/api/hero-video', requireAuth, (req, res) => {
     res.json({ success: true, heroVideo: data.heroVideo });
 });
 
+// Reorder items in category
+app.post('/api/reorder/:category', requireAuth, (req, res) => {
+    const data = readData();
+    const category = req.params.category;
+    const { items } = req.body;
+
+    if (data[category] && Array.isArray(items)) {
+        data[category] = items;
+        writeData(data);
+    }
+    res.json({ success: true });
+});
+
 // Delete item from category (protected)
 app.delete('/api/content/:category/:id', requireAuth, (req, res) => {
     const data = readData();
