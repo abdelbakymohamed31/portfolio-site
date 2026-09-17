@@ -293,7 +293,7 @@ ul {
     }
 }
 
-/* Hero Video */
+/* Hero Video (Intro Video ONLY) - Square & Large Frame */
 .hero-video {
     flex-shrink: 0;
     display: flex;
@@ -305,84 +305,34 @@ ul {
 
 @media (min-width: 768px) {
     .hero-video {
-        max-width: 540px;
+        max-width: 550px; /* Big & clear frame */
     }
 }
 
-.intro-card {
-    background: #fdfbf7;
-    border-radius: 28px;
-    padding: 1.5rem;
+.hero-video-wrapper {
     width: 100%;
-    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), 0 0 0 3px var(--accent-color);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1.2rem;
+    aspect-ratio: 1 / 1 !important; /* Square format 1:1 */
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(251, 191, 36, 0.35), 0 0 0 3px var(--accent-color);
+    background: #000;
     position: relative;
     border: 3px solid var(--accent-color);
 }
 
-.intro-card-header {
-    font-size: 1.05rem;
-    font-weight: 800;
-    color: #111827;
-    text-align: center;
-    background: #fef08a;
-    padding: 0.4rem 1.2rem;
-    border-radius: 20px;
-    border: 1px solid #f59e0b;
-}
-
-.video-wrapper {
-    width: 100%;
-    aspect-ratio: 16/9;
-    border-radius: 18px;
-    overflow: hidden;
-    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.25);
-    background: #000;
-    position: relative;
-    border: 2px solid var(--accent-color);
-}
-
-.intro-card-socials {
-    display: flex;
-    justify-content: center;
-    gap: 1.2rem;
-    margin-top: 0.2rem;
-}
-
-.intro-card-socials a {
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
-    background: var(--accent-color);
-    color: #000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.15rem;
-    transition: transform 0.3s, background 0.3s;
-    box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4);
-}
-
-.intro-card-socials a:hover {
-    transform: translateY(-3px) scale(1.1);
-    background: var(--primary-hover);
-}
-
-.video-wrapper iframe {
-    width: 100%;
-    height: 100%;
-    border: none;
-}
-
-.video-wrapper video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+.hero-video-wrapper video {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important; /* Fills square frame perfectly without empty space */
     border: none;
     cursor: pointer;
+    display: block;
+}
+
+.hero-video-wrapper iframe {
+    width: 100% !important;
+    height: 100% !important;
+    border: none;
 }
 
 .hero-controls {
