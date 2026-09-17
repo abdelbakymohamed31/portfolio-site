@@ -16,7 +16,11 @@ const storage = multer.diskStorage({
         cb(null, uniqueName);
     }
 });
-const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } }); // 10MB max for images
+
+// No file size limit for video uploads
+const uploadVideo = multer({ storage });
+// 10MB max for images
+const uploadImage = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -34,8 +38,8 @@ if (!fs.existsSync(DATA_FILE)) {
 
 // Middleware
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '500mb' }));
+app.use(express.urlencoded({ extended: true, limit: '500mb' }));
 app.use(express.static(__dirname));
 app.use('/uploads', express.static(uploadsDir));
 app.use(session({
@@ -130,7 +134,7 @@ app.post('/api/content/:category', requireAuth, (req, res) => {
 });
 
 // Upload image and add item (protected)
-app.post('/api/upload/:category', requireAuth, upload.single('image'), (req, res) => {
+app.post('/api/upload/:category', requireAuth, uploadImage.single('image'), (req, res) => {
     const data = readData();
     const category = req.params.category;
 
@@ -153,15 +157,41 @@ app.post('/api/upload/:category', requireAuth, upload.single('image'), (req, res
     res.json({ success: true, item: newItem });
 });
 
-// Set hero video (protected)
+// Upload video and add item (protected) - NO SIZE LIMIT
+app.post('/api/upload-video/:category', requireAuth, uploadVideo.single('video'), (req, res) => {
+    const data = readData();
+    const category = req.params.category;
+
+    if (!data[category]) {
+        return res.status(404).json({ error: 'القسم غير موجود' });
+    }
+
+    if (!req.file) {
+        return res.status(400).json({ error: 'لم يتم اختيار فيديو' });
+    }
+
+    const newItem = {
+        id: Date.now(),
+        title: req.body.title || '',
+        videoUrl: '/uploads/' + req.file.filename
+    };
+
+    data[category].push(newItem);
+    writeData(data);
+    res.json({ success: true, item: newItem });
+});
+
+// Set hero video (protected) - now accepts videoUrl (file URL) instead of youtubeId
 app.post('/api/hero-video', requireAuth, (req, res) => {
-    const { youtubeId } = req.body;
-    if (!youtubeId) {
-        return res.status(400).json({ error: 'لم يتم توفير معرف يوتيوب' });
+    const { videoUrl, youtubeId } = req.body;
+    const heroValue = videoUrl || youtubeId;
+
+    if (!heroValue) {
+        return res.status(400).json({ error: 'لم يتم توفير رابط الفيديو' });
     }
 
     const data = readData();
-    data.heroVideo = youtubeId;
+    data.heroVideo = heroValue;
     writeData(data);
     res.json({ success: true, heroVideo: data.heroVideo });
 });
@@ -217,7 +247,7 @@ app.put('/api/content/:category/:id', requireAuth, (req, res) => {
 // Handle Multer errors (file too large, etc.)
 app.use((err, req, res, next) => {
     if (err.code === 'LIMIT_FILE_SIZE') {
-        return res.status(400).json({ error: 'حجم الملف كبير جداً. الحد الأقصى للفيديو 100MB والصور 10MB' });
+        return res.status(400).json({ error: 'حجم الملف كبير جداً. الحد الأقصى للصور 10MB' });
     }
     next(err);
 });

@@ -351,138 +351,162 @@
             <button class="tab" data-tab="webDesign">مواقع وتطبيقات</button>
         </div>
 
-        <!-- Hero Video -->
+        <!-- Hero Video - FILE UPLOAD -->
         <div class="tab-content active" id="heroVideo">
             <div class="card">
                 <h2 class="section-title"><i class="fa-solid fa-play-circle"></i> الفيديو التعريفي (الرئيسي)</h2>
-                <p style="color: #9ca3af; margin-bottom: 1rem;">هذا الفيديو يظهر في أعلى الموقع. ضع رابط يوتيوب جديد لتغييره.</p>
+                <p style="color: #9ca3af; margin-bottom: 1rem;">هذا الفيديو يظهر في أعلى الموقع ويشتغل تلقائياً. ارفع فيديو جديد لتغييره.</p>
                 <div id="current-hero-video" style="margin-bottom: 1.5rem;"></div>
-                <form id="form-heroVideo">
+                <form id="form-heroVideo" enctype="multipart/form-data">
                     <div class="form-group" style="margin-bottom: 1rem;">
-                        <label>رابط فيديو يوتيوب</label>
-                        <input type="url" id="hero-youtube-url" placeholder="مثال: https://www.youtube.com/watch?v=..." required>
+                        <label>اختر ملف الفيديو</label>
+                        <div class="file-upload-area" onclick="this.querySelector('input').click()">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                            <p>اضغط هنا لاختيار فيديو (بدون حد أقصى للحجم)</p>
+                            <input type="file" name="video" accept="video/*" required onchange="previewVideo(this)">
+                            <video class="video-preview" controls muted></video>
+                            <div class="file-name"></div>
+                        </div>
                     </div>
                     <button type="submit" class="btn-add"><i class="fa-solid fa-save"></i> حفظ الفيديو التعريفي</button>
                 </form>
                 <div class="progress-box" id="progress-heroVideo">
                     <div class="progress-header">
-                        <span class="progress-title"><i class="fa-solid fa-cloud-arrow-up"></i> حالة الرفع والمعالجة</span>
+                        <span class="progress-title"><i class="fa-solid fa-cloud-arrow-up"></i> حالة الرفع</span>
                         <span class="progress-percentage">0%</span>
                     </div>
                     <div class="progress-bar-bg">
                         <div class="progress-bar-fill"></div>
                     </div>
                     <div class="progress-details">
-                        <span class="progress-status-text">جاري الحفظ... ⌛</span>
-                        <span class="progress-details-mb">--</span>
+                        <span class="progress-status-text">جاري الرفع... ⌛</span>
+                        <span class="progress-details-mb">0 MB من 0 MB</span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Montage -->
+        <!-- Montage - FILE UPLOAD -->
         <div class="tab-content" id="montage">
             <div class="card">
                 <h2 class="section-title"><i class="fa-solid fa-clapperboard"></i> إضافة مونتاج</h2>
-                <form id="form-montage">
+                <form id="form-montage" enctype="multipart/form-data">
                     <div class="form-row">
                         <div class="form-group">
                             <label>العنوان</label>
                             <input type="text" name="title" placeholder="عنوان الفيديو" required>
                         </div>
                         <div class="form-group">
-                            <label>رابط فيديو يوتيوب (عرضي - Landscape)</label>
-                            <input type="url" name="videoUrl" placeholder="مثال: https://www.youtube.com/watch?v=..." required>
+                            <label>ملف الفيديو (عرضي - Landscape)</label>
+                            <div class="file-upload-area" onclick="this.querySelector('input').click()">
+                                <i class="fa-solid fa-cloud-arrow-up"></i>
+                                <p>اضغط هنا لاختيار فيديو</p>
+                                <input type="file" name="video" accept="video/*" required onchange="previewVideo(this)">
+                                <video class="video-preview" controls muted></video>
+                                <div class="file-name"></div>
+                            </div>
                         </div>
                     </div>
                     <button type="submit" class="btn-add"><i class="fa-solid fa-plus"></i> إضافة</button>
                 </form>
                 <div class="progress-box" id="progress-montage">
                     <div class="progress-header">
-                        <span class="progress-title"><i class="fa-solid fa-cloud-arrow-up"></i> حالة الرفع والمعالجة</span>
+                        <span class="progress-title"><i class="fa-solid fa-cloud-arrow-up"></i> حالة الرفع</span>
                         <span class="progress-percentage">0%</span>
                     </div>
                     <div class="progress-bar-bg">
                         <div class="progress-bar-fill"></div>
                     </div>
                     <div class="progress-details">
-                        <span class="progress-status-text">جاري الحفظ... ⌛</span>
-                        <span class="progress-details-mb">--</span>
+                        <span class="progress-status-text">جاري الرفع... ⌛</span>
+                        <span class="progress-details-mb">0 MB من 0 MB</span>
                     </div>
                 </div>
                 <div class="items-list" id="list-montage"></div>
             </div>
         </div>
 
-        <!-- Motion Graphics -->
+        <!-- Motion Graphics - FILE UPLOAD -->
         <div class="tab-content" id="motionGraphics">
             <div class="card">
                 <h2 class="section-title"><i class="fa-solid fa-video"></i> إضافة موشن جرافيك</h2>
-                <form id="form-motionGraphics">
+                <form id="form-motionGraphics" enctype="multipart/form-data">
                     <div class="form-row">
                         <div class="form-group">
                             <label>العنوان</label>
                             <input type="text" name="title" placeholder="عنوان الفيديو" required>
                         </div>
                         <div class="form-group">
-                            <label>رابط فيديو يوتيوب</label>
-                            <input type="url" name="videoUrl" placeholder="مثال: https://www.youtube.com/watch?v=..." required>
+                            <label>ملف الفيديو</label>
+                            <div class="file-upload-area" onclick="this.querySelector('input').click()">
+                                <i class="fa-solid fa-cloud-arrow-up"></i>
+                                <p>اضغط هنا لاختيار فيديو</p>
+                                <input type="file" name="video" accept="video/*" required onchange="previewVideo(this)">
+                                <video class="video-preview" controls muted></video>
+                                <div class="file-name"></div>
+                            </div>
                         </div>
                     </div>
                     <button type="submit" class="btn-add"><i class="fa-solid fa-plus"></i> إضافة</button>
                 </form>
                 <div class="progress-box" id="progress-motionGraphics">
                     <div class="progress-header">
-                        <span class="progress-title"><i class="fa-solid fa-cloud-arrow-up"></i> حالة الرفع والمعالجة</span>
+                        <span class="progress-title"><i class="fa-solid fa-cloud-arrow-up"></i> حالة الرفع</span>
                         <span class="progress-percentage">0%</span>
                     </div>
                     <div class="progress-bar-bg">
                         <div class="progress-bar-fill"></div>
                     </div>
                     <div class="progress-details">
-                        <span class="progress-status-text">جاري الحفظ... ⌛</span>
-                        <span class="progress-details-mb">--</span>
+                        <span class="progress-status-text">جاري الرفع... ⌛</span>
+                        <span class="progress-details-mb">0 MB من 0 MB</span>
                     </div>
                 </div>
                 <div class="items-list" id="list-motionGraphics"></div>
             </div>
         </div>
 
-        <!-- Reels -->
+        <!-- Reels - FILE UPLOAD -->
         <div class="tab-content" id="reels">
             <div class="card">
                 <h2 class="section-title"><i class="fa-solid fa-film"></i> إضافة ريلز</h2>
-                <form id="form-reels">
+                <form id="form-reels" enctype="multipart/form-data">
                     <div class="form-row">
                         <div class="form-group">
                             <label>العنوان</label>
                             <input type="text" name="title" placeholder="عنوان الريلز" required>
                         </div>
                         <div class="form-group">
-                            <label>رابط فيديو يوتيوب (رأسي - Shorts)</label>
-                            <input type="url" name="videoUrl" placeholder="مثال: https://www.youtube.com/shorts/..." required>
+                            <label>ملف الفيديو (رأسي - Shorts)</label>
+                            <div class="file-upload-area" onclick="this.querySelector('input').click()">
+                                <i class="fa-solid fa-cloud-arrow-up"></i>
+                                <p>اضغط هنا لاختيار فيديو</p>
+                                <input type="file" name="video" accept="video/*" required onchange="previewVideo(this)">
+                                <video class="video-preview" controls muted></video>
+                                <div class="file-name"></div>
+                            </div>
                         </div>
                     </div>
                     <button type="submit" class="btn-add"><i class="fa-solid fa-plus"></i> إضافة</button>
                 </form>
                 <div class="progress-box" id="progress-reels">
                     <div class="progress-header">
-                        <span class="progress-title"><i class="fa-solid fa-cloud-arrow-up"></i> حالة الرفع والمعالجة</span>
+                        <span class="progress-title"><i class="fa-solid fa-cloud-arrow-up"></i> حالة الرفع</span>
                         <span class="progress-percentage">0%</span>
                     </div>
                     <div class="progress-bar-bg">
                         <div class="progress-bar-fill"></div>
                     </div>
                     <div class="progress-details">
-                        <span class="progress-status-text">جاري الحفظ... ⌛</span>
-                        <span class="progress-details-mb">--</span>
+                        <span class="progress-status-text">جاري الرفع... ⌛</span>
+                        <span class="progress-details-mb">0 MB من 0 MB</span>
                     </div>
                 </div>
                 <div class="items-list" id="list-reels"></div>
             </div>
         </div>
 
-        <!-- Graphic Design -->
+        <!-- Graphic Design - IMAGE UPLOAD (unchanged) -->
         <div class="tab-content" id="graphicDesign">
             <div class="card">
                 <h2 class="section-title"><i class="fa-solid fa-palette"></i> إضافة تصميم جرافيك</h2>
@@ -507,7 +531,7 @@
                 </form>
                 <div class="progress-box" id="progress-graphicDesign">
                     <div class="progress-header">
-                        <span class="progress-title"><i class="fa-solid fa-cloud-arrow-up"></i> حالة الرفع بالميجابايت والنسبة</span>
+                        <span class="progress-title"><i class="fa-solid fa-cloud-arrow-up"></i> حالة الرفع</span>
                         <span class="progress-percentage">0%</span>
                     </div>
                     <div class="progress-bar-bg">
@@ -522,7 +546,7 @@
             </div>
         </div>
 
-        <!-- Thumbnails -->
+        <!-- Thumbnails - IMAGE UPLOAD (unchanged) -->
         <div class="tab-content" id="thumbnails">
             <div class="card">
                 <h2 class="section-title"><i class="fa-solid fa-image"></i> إضافة صورة مصغرة</h2>
@@ -547,7 +571,7 @@
                 </form>
                 <div class="progress-box" id="progress-thumbnails">
                     <div class="progress-header">
-                        <span class="progress-title"><i class="fa-solid fa-cloud-arrow-up"></i> حالة الرفع بالميجابايت والنسبة</span>
+                        <span class="progress-title"><i class="fa-solid fa-cloud-arrow-up"></i> حالة الرفع</span>
                         <span class="progress-percentage">0%</span>
                     </div>
                     <div class="progress-bar-bg">
@@ -562,7 +586,7 @@
             </div>
         </div>
 
-        <!-- Web Design -->
+        <!-- Web Design (unchanged) -->
         <div class="tab-content" id="webDesign">
             <div class="card">
                 <h2 class="section-title"><i class="fa-solid fa-laptop"></i> إضافة موقع/تطبيق</h2>
@@ -581,7 +605,7 @@
                 </form>
                 <div class="progress-box" id="progress-webDesign">
                     <div class="progress-header">
-                        <span class="progress-title"><i class="fa-solid fa-cloud-arrow-up"></i> حالة الرفع والمعالجة</span>
+                        <span class="progress-title"><i class="fa-solid fa-cloud-arrow-up"></i> حالة الحفظ</span>
                         <span class="progress-percentage">0%</span>
                     </div>
                     <div class="progress-bar-bg">
@@ -610,7 +634,7 @@
             montage: [], reels: [], motionGraphics: [], graphicDesign: [], thumbnails: [], webDesign: []
         };
 
-        // Auth check - التحقق من تسجيل الدخول
+        // Auth check
         auth.onAuthStateChanged((user) => {
             if (user || localStorage.getItem('isAdmin') === 'true') {
                 loadContent();
@@ -629,36 +653,163 @@
             });
         });
 
+        // Upload video file to Firebase Storage with progress tracking
+        function uploadVideoToStorage(file, progressBoxId) {
+            return new Promise((resolve, reject) => {
+                const box = document.getElementById(progressBoxId);
+                const fileName = Date.now() + '-' + Math.round(Math.random() * 1E9) + '.' + file.name.split('.').pop();
+                const storageRef = storage.ref('videos/' + fileName);
+                const uploadTask = storageRef.put(file);
+
+                if (box) {
+                    const fill = box.querySelector('.progress-bar-fill');
+                    const percentText = box.querySelector('.progress-percentage');
+                    const detailsText = box.querySelector('.progress-details-mb');
+                    const statusText = box.querySelector('.progress-status-text');
+                    box.style.display = 'block';
+                    fill.style.width = '0%';
+                    percentText.textContent = '0%';
+                    statusText.textContent = 'جاري البدء بالرفع... ⌛';
+                    statusText.style.color = '#fbbf24';
+                    const totalMB = (file.size / (1024 * 1024)).toFixed(2);
+                    detailsText.textContent = `0 MB من ${totalMB} MB`;
+
+                    uploadTask.on('state_changed',
+                        (snapshot) => {
+                            const percent = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+                            const loadedMB = (snapshot.bytesTransferred / (1024 * 1024)).toFixed(2);
+                            const totalSizeMB = (snapshot.totalBytes / (1024 * 1024)).toFixed(2);
+                            fill.style.width = percent + '%';
+                            percentText.textContent = percent + '%';
+                            detailsText.textContent = `${loadedMB} MB من ${totalSizeMB} MB`;
+                            if (percent === 100) {
+                                statusText.textContent = 'اكتمل الرفع 100% - جاري الحفظ... ⏳';
+                                statusText.style.color = '#fbbf24';
+                            } else {
+                                statusText.textContent = `جاري الرفع... (${percent}%) ⌛`;
+                            }
+                        },
+                        (error) => {
+                            statusText.textContent = 'حدث خطأ أثناء الرفع ❌';
+                            statusText.style.color = '#ef4444';
+                            reject(error);
+                        },
+                        async () => {
+                            const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
+                            fill.style.width = '100%';
+                            percentText.textContent = '100%';
+                            statusText.textContent = 'تم التحميل بنجاح! ✔️';
+                            statusText.style.color = '#10b981';
+                            setTimeout(() => { box.style.display = 'none'; }, 2500);
+                            resolve(downloadURL);
+                        }
+                    );
+                } else {
+                    uploadTask.on('state_changed', null,
+                        (error) => reject(error),
+                        async () => {
+                            const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
+                            resolve(downloadURL);
+                        }
+                    );
+                }
+            });
+        }
+
+        // Upload image to Cloudinary with progress
+        function uploadFileWithProgress(file, progressBoxId) {
+            return new Promise((resolve, reject) => {
+                const box = document.getElementById(progressBoxId);
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('upload_preset', 'lg5xqvab');
+
+                if (!box) {
+                    fetch('https://api.cloudinary.com/v1_1/pqr9gfxr/image/upload', {
+                        method: 'POST', body: formData
+                    }).then(r => r.json()).then(resolve).catch(reject);
+                    return;
+                }
+
+                const fill = box.querySelector('.progress-bar-fill');
+                const percentText = box.querySelector('.progress-percentage');
+                const detailsText = box.querySelector('.progress-details-mb');
+                const statusText = box.querySelector('.progress-status-text');
+                box.style.display = 'block';
+                fill.style.width = '0%';
+                percentText.textContent = '0%';
+                statusText.textContent = 'جاري البدء بالرفع... ⌛';
+                statusText.style.color = '#fbbf24';
+                const totalMB = (file.size / (1024 * 1024)).toFixed(2);
+                detailsText.textContent = `0 MB من ${totalMB} MB`;
+
+                const xhr = new XMLHttpRequest();
+                xhr.upload.onprogress = (e) => {
+                    if (e.lengthComputable) {
+                        const percent = Math.round((e.loaded / e.total) * 100);
+                        const loadedMB = (e.loaded / (1024 * 1024)).toFixed(2);
+                        const totalSizeMB = (e.total / (1024 * 1024)).toFixed(2);
+                        fill.style.width = percent + '%';
+                        percentText.textContent = percent + '%';
+                        detailsText.textContent = `${loadedMB} MB من ${totalSizeMB} MB`;
+                        if (percent === 100) {
+                            statusText.textContent = 'اكتمل الرفع 100% - جاري التجهيز... ⏳';
+                            statusText.style.color = '#fbbf24';
+                        } else {
+                            statusText.textContent = `جاري الرفع... (${percent}%) ⌛`;
+                        }
+                    }
+                };
+                xhr.onload = () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        fill.style.width = '100%';
+                        percentText.textContent = '100%';
+                        statusText.textContent = 'تم التحميل بنجاح! ✔️';
+                        statusText.style.color = '#10b981';
+                        setTimeout(() => { box.style.display = 'none'; }, 2500);
+                        try { resolve(JSON.parse(xhr.responseText)); } catch (err) { resolve({}); }
+                    } else {
+                        statusText.textContent = 'حدث خطأ أثناء الرفع ❌';
+                        statusText.style.color = '#ef4444';
+                        reject(new Error('فشل الرفع'));
+                    }
+                };
+                xhr.onerror = () => {
+                    statusText.textContent = 'خطأ في الاتصال ❌';
+                    statusText.style.color = '#ef4444';
+                    reject(new Error('خطأ شبكة'));
+                };
+                xhr.open('POST', 'https://api.cloudinary.com/v1_1/pqr9gfxr/image/upload', true);
+                xhr.send(formData);
+            });
+        }
+
         // Load all content from Firestore
         async function loadContent() {
             try {
                 // 1. Load Hero Video
                 const heroDoc = await db.collection('settings').doc('hero').get();
                 const heroVideoDiv = document.getElementById('current-hero-video');
-                if (heroVideoDiv && heroDoc.exists && heroDoc.data().youtubeId) {
-                    const heroVideo = heroDoc.data().youtubeId;
-                    if (heroVideo.startsWith('/uploads/')) {
+                if (heroVideoDiv && heroDoc.exists) {
+                    const heroData = heroDoc.data();
+                    const heroUrl = heroData.videoUrl || heroData.youtubeId || '';
+                    if (heroUrl) {
                         heroVideoDiv.innerHTML = `
                             <p style="color: #fbbf24; margin-bottom: 0.5rem;"><i class="fa-solid fa-check-circle"></i> الفيديو الحالي:</p>
-                            <video src="${heroVideo}" style="max-width: 300px; border-radius: 12px; border: 2px solid #333;" controls muted></video>
+                            <video src="${heroUrl}" style="max-width: 300px; border-radius: 12px; border: 2px solid #333;" controls muted></video>
                         `;
                     } else {
-                        heroVideoDiv.innerHTML = `
-                            <p style="color: #fbbf24; margin-bottom: 0.5rem;"><i class="fa-solid fa-check-circle"></i> الفيديو الحالي (يوتيوب):</p>
-                            <iframe src="https://www.youtube.com/embed/${heroVideo}" style="max-width: 300px; height: 169px; border-radius: 12px; border: 2px solid #333;" frameborder="0" allowfullscreen></iframe>
-                        `;
+                        heroVideoDiv.innerHTML = '<p style="color: #9ca3af;"><i class="fa-solid fa-info-circle"></i> لا يوجد فيديو تعريفي حالي.</p>';
                     }
                 } else if (heroVideoDiv) {
-                    heroVideoDiv.innerHTML = '<p style="color: #9ca3af;"><i class="fa-solid fa-info-circle"></i> لا يوجد فيديو تعريفي حالي. يتم استخدام التنسيق الافتراضي.</p>';
+                    heroVideoDiv.innerHTML = '<p style="color: #9ca3af;"><i class="fa-solid fa-info-circle"></i> لا يوجد فيديو تعريفي حالي.</p>';
                 }
 
                 // 2. Load Categories items
                 const snapshot = await db.collection('portfolio_items').get();
-                
                 categoryDataStore = {
                     montage: [], reels: [], motionGraphics: [], graphicDesign: [], thumbnails: [], webDesign: []
                 };
-
                 snapshot.forEach(doc => {
                     const item = doc.data();
                     item.id = doc.id;
@@ -667,44 +818,49 @@
                     }
                 });
 
-                // Sort items in each category by order
+                // Sort items by order
                 categories.forEach(category => {
                     categoryDataStore[category].sort((a, b) => {
-                        if (a.order !== undefined && b.order !== undefined) {
-                            return a.order - b.order;
-                        }
+                        if (a.order !== undefined && b.order !== undefined) return a.order - b.order;
                         if (a.order !== undefined) return -1;
                         if (b.order !== undefined) return 1;
                         return 0;
                     });
                 });
 
-                // Render list with Reordering Up/Down controls
+                // Render lists with reorder controls
                 categories.forEach(category => {
                     const list = document.getElementById(`list-${category}`);
                     const items = categoryDataStore[category];
                     if (list) {
-                        list.innerHTML = items.map((item, index) => `
-                            <div class="item">
-                                <div class="item-info">
-                                    <span class="order-badge">#${index + 1}</span>
-                                    ${item.imageUrl ? `<img src="${item.imageUrl}" class="item-thumb">` :
-                                      item.youtubeId ? `<img src="https://img.youtube.com/vi/${item.youtubeId}/mqdefault.jpg" class="item-thumb">` : ''}
-                                    <span>${item.title}</span>
+                        list.innerHTML = items.map((item, index) => {
+                            let thumbHtml = '';
+                            if (item.imageUrl) {
+                                thumbHtml = `<img src="${item.imageUrl}" class="item-thumb">`;
+                            } else if (item.videoUrl) {
+                                thumbHtml = `<video src="${item.videoUrl}" class="item-thumb" muted preload="metadata"></video>`;
+                            }
+                            return `
+                                <div class="item">
+                                    <div class="item-info">
+                                        <span class="order-badge">#${index + 1}</span>
+                                        ${thumbHtml}
+                                        <span>${item.title}</span>
+                                    </div>
+                                    <div class="item-actions">
+                                        <button class="btn-order" onclick="moveItem('${category}', ${index}, 'up')" title="تحريك لأعلى" ${index === 0 ? 'disabled style="opacity:0.3;cursor:not-allowed;"' : ''}>
+                                            <i class="fa-solid fa-arrow-up"></i> أعلى
+                                        </button>
+                                        <button class="btn-order" onclick="moveItem('${category}', ${index}, 'down')" title="تحريك لأسفل" ${index === items.length - 1 ? 'disabled style="opacity:0.3;cursor:not-allowed;"' : ''}>
+                                            <i class="fa-solid fa-arrow-down"></i> أسفل
+                                        </button>
+                                        <button class="btn-delete" onclick="deleteItem('${item.id}')">
+                                            <i class="fa-solid fa-trash"></i> حذف
+                                        </button>
+                                    </div>
                                 </div>
-                                <div class="item-actions">
-                                    <button class="btn-order" onclick="moveItem('${category}', ${index}, 'up')" title="تحريك لأعلى" ${index === 0 ? 'disabled style="opacity:0.3;cursor:not-allowed;"' : ''}>
-                                        <i class="fa-solid fa-arrow-up"></i> أعلى
-                                    </button>
-                                    <button class="btn-order" onclick="moveItem('${category}', ${index}, 'down')" title="تحريك لأسفل" ${index === items.length - 1 ? 'disabled style="opacity:0.3;cursor:not-allowed;"' : ''}>
-                                        <i class="fa-solid fa-arrow-down"></i> أسفل
-                                    </button>
-                                    <button class="btn-delete" onclick="deleteItem('${item.id}')">
-                                        <i class="fa-solid fa-trash"></i> حذف
-                                    </button>
-                                </div>
-                            </div>
-                        `).join('');
+                            `;
+                        }).join('');
                     }
                 });
             } catch (error) {
@@ -712,20 +868,17 @@
             }
         }
 
-        // Reorder items function
+        // Reorder items
         async function moveItem(category, index, direction) {
             const list = categoryDataStore[category];
             if (!list) return;
-
             const targetIndex = direction === 'up' ? index - 1 : index + 1;
             if (targetIndex < 0 || targetIndex >= list.length) return;
 
-            // Swap position in memory
             const temp = list[index];
             list[index] = list[targetIndex];
             list[targetIndex] = temp;
 
-            // Update order index batch in Firestore
             const batch = db.batch();
             list.forEach((item, idx) => {
                 item.order = idx;
@@ -745,144 +898,47 @@
                 showSuccess('تم تغيير ترتيب العرض بنجاح!');
                 loadContent();
             } catch (error) {
-                console.error('Error reordering items:', error);
+                console.error('Error reordering:', error);
                 alert('حدث خطأ أثناء تغيير الترتيب');
             }
         }
 
-        // Extract YouTube ID from any URL format
-        function extractYouTubeId(input) {
-            if (!input) return '';
-            const str = String(input).trim();
-            if (/^[a-zA-Z0-9_-]{11}$/.test(str)) {
-                return str;
-            }
-            const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts|live)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
-            const match = str.match(regex);
-            if (match && match[1]) {
-                return match[1];
-            }
-            return str;
-        }
-
-        // Upload helper with real-time percentage (%) and MB progress tracking
-        function uploadFileWithProgress(file, progressBoxId) {
-            return new Promise((resolve, reject) => {
-                const box = document.getElementById(progressBoxId);
-                if (!box) {
-                    const formData = new FormData();
-                    formData.append('file', file);
-                    formData.append('upload_preset', 'lg5xqvab');
-                    fetch('https://api.cloudinary.com/v1_1/pqr9gfxr/image/upload', {
-                        method: 'POST',
-                        body: formData
-                    }).then(r => r.json()).then(resolve).catch(reject);
-                    return;
-                }
-
-                const fill = box.querySelector('.progress-bar-fill');
-                const percentText = box.querySelector('.progress-percentage');
-                const detailsText = box.querySelector('.progress-details-mb');
-                const statusText = box.querySelector('.progress-status-text');
-
-                box.style.display = 'block';
-                fill.style.width = '0%';
-                percentText.textContent = '0%';
-                statusText.textContent = 'جاري البدء بالرفع... ⌛';
-                statusText.style.color = '#fbbf24';
-
-                const totalMB = (file.size / (1024 * 1024)).toFixed(2);
-                detailsText.textContent = `0 MB من ${totalMB} MB`;
-
-                const formData = new FormData();
-                formData.append('file', file);
-                formData.append('upload_preset', 'lg5xqvab');
-
-                const xhr = new XMLHttpRequest();
-
-                xhr.upload.onprogress = (e) => {
-                    if (e.lengthComputable) {
-                        const percent = Math.round((e.loaded / e.total) * 100);
-                        const loadedMB = (e.loaded / (1024 * 1024)).toFixed(2);
-                        const totalSizeMB = (e.total / (1024 * 1024)).toFixed(2);
-
-                        fill.style.width = percent + '%';
-                        percentText.textContent = percent + '%';
-                        detailsText.textContent = `${loadedMB} MB من ${totalSizeMB} MB`;
-
-                        if (percent === 100) {
-                            statusText.textContent = 'تم اكتمل الرفع 100% - جاري التجهيز للحفظ... ⏳';
-                            statusText.style.color = '#fbbf24';
-                        } else {
-                            statusText.textContent = `جاري الرفع... (${percent}%) ⌛`;
-                        }
-                    }
-                };
-
-                xhr.onload = () => {
-                    if (xhr.status >= 200 && xhr.status < 300) {
-                        fill.style.width = '100%';
-                        percentText.textContent = '100%';
-                        statusText.textContent = 'تم التحميل بنجاح! ✔️';
-                        statusText.style.color = '#10b981';
-                        setTimeout(() => {
-                            box.style.display = 'none';
-                        }, 2500);
-                        try {
-                            resolve(JSON.parse(xhr.responseText));
-                        } catch (err) {
-                            resolve({});
-                        }
-                    } else {
-                        statusText.textContent = 'حدث خطأ أثناء الرفع ❌';
-                        statusText.style.color = '#ef4444';
-                        reject(new Error('فشل الرفع'));
-                    }
-                };
-
-                xhr.onerror = () => {
-                    statusText.textContent = 'خطأ في الاتصال بالسيرفر ❌';
-                    statusText.style.color = '#ef4444';
-                    reject(new Error('خطأ شبكة'));
-                };
-
-                xhr.open('POST', 'https://api.cloudinary.com/v1_1/pqr9gfxr/image/upload', true);
-                xhr.send(formData);
-            });
-        }
-
-        // Hero Video submit handler
+        // Hero Video submit handler - FILE UPLOAD
         const heroForm = document.getElementById('form-heroVideo');
         if (heroForm) {
             heroForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const urlInput = document.getElementById('hero-youtube-url').value;
-                const youtubeId = extractYouTubeId(urlInput);
-                if (!youtubeId) {
-                    alert('رابط يوتيوب غير صالح');
+                const fileInput = heroForm.querySelector('input[type="file"]');
+                if (!fileInput.files || !fileInput.files[0]) {
+                    alert('يرجى اختيار فيديو');
                     return;
                 }
-                
+
                 const btn = heroForm.querySelector('button[type="submit"]');
                 const originalText = btn.innerHTML;
-                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الحفظ...';
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الرفع...';
                 btn.disabled = true;
 
                 try {
-                    await db.collection('settings').doc('hero').set({ youtubeId });
+                    const videoUrl = await uploadVideoToStorage(fileInput.files[0], 'progress-heroVideo');
+                    await db.collection('settings').doc('hero').set({ videoUrl });
                     try {
                         await fetch('/api/hero-video', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ youtubeId })
+                            body: JSON.stringify({ videoUrl })
                         });
                     } catch (e) {}
-                    showSuccess();
+                    showSuccess('تم حفظ الفيديو التعريفي بنجاح!');
                     heroForm.reset();
+                    const vidPreview = heroForm.querySelector('.video-preview');
+                    const fileName = heroForm.querySelector('.file-name');
+                    if (vidPreview) vidPreview.style.display = 'none';
+                    if (fileName) fileName.textContent = '';
                     loadContent();
                 } catch (error) {
                     console.error('Error saving hero video:', error);
-                    alert('حدث خطأ في حفظ الفيديو');
+                    alert('حدث خطأ في رفع الفيديو: ' + error.message);
                 } finally {
                     btn.innerHTML = originalText;
                     btn.disabled = false;
@@ -896,11 +952,9 @@
             if (form) {
                 form.addEventListener('submit', async (e) => {
                     e.preventDefault();
-                    
                     const title = form.querySelector('input[name="title"]').value;
                     const btn = form.querySelector('button[type="submit"]');
                     const originalBtnText = btn.innerHTML;
-                    
                     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الإضافة...';
                     btn.disabled = true;
 
@@ -917,34 +971,31 @@
                             const fileInput = form.querySelector('input[type="file"]');
                             if (!fileInput.files || !fileInput.files[0]) {
                                 alert('يرجى اختيار صورة');
+                                btn.innerHTML = originalBtnText;
+                                btn.disabled = false;
                                 return;
                             }
-                            const file = fileInput.files[0];
-                            
-                            const uploadRes = await uploadFileWithProgress(file, `progress-${category}`);
+                            const uploadRes = await uploadFileWithProgress(fileInput.files[0], `progress-${category}`);
                             if (!uploadRes || !uploadRes.secure_url) {
-                                throw new Error('فشل الحصول على رابط الصورة المرفوعة');
+                                throw new Error('فشل الحصول على رابط الصورة');
                             }
-                            
                             newItem.imageUrl = uploadRes.secure_url;
                         } else if (['montage', 'reels', 'motionGraphics'].includes(category)) {
-                            const videoUrl = form.querySelector('input[name="videoUrl"]').value;
-                            const youtubeId = extractYouTubeId(videoUrl);
-                            if (!youtubeId) {
-                                alert('رابط يوتيوب غير صالح');
+                            const fileInput = form.querySelector('input[type="file"]');
+                            if (!fileInput.files || !fileInput.files[0]) {
+                                alert('يرجى اختيار فيديو');
+                                btn.innerHTML = originalBtnText;
+                                btn.disabled = false;
                                 return;
                             }
-                            newItem.youtubeId = youtubeId;
+                            const videoUrl = await uploadVideoToStorage(fileInput.files[0], `progress-${category}`);
                             newItem.videoUrl = videoUrl;
                         } else if (category === 'webDesign') {
                             const imageUrl = form.querySelector('input[name="imageUrl"]').value;
                             newItem.imageUrl = imageUrl;
                         }
 
-                        // Save in Firestore
                         await db.collection('portfolio_items').add(newItem);
-
-                        // Also post to local express server API as dual-sync
                         try {
                             await fetch(`/api/content/${category}`, {
                                 method: 'POST',
@@ -952,22 +1003,19 @@
                                 body: JSON.stringify(newItem)
                             });
                         } catch (e) {}
-                        
+
                         showSuccess();
                         form.reset();
-                        
-                        // Reset inputs previews
                         const imgPreview = form.querySelector('.image-preview');
                         const vidPreview = form.querySelector('.video-preview');
                         const fileName = form.querySelector('.file-name');
                         if (imgPreview) imgPreview.style.display = 'none';
                         if (vidPreview) vidPreview.style.display = 'none';
                         if (fileName) fileName.textContent = '';
-                        
                         loadContent();
                     } catch (error) {
                         console.error('Error adding item:', error);
-                        alert('حدث خطأ أثناء الإضافة');
+                        alert('حدث خطأ أثناء الإضافة: ' + error.message);
                     } finally {
                         btn.innerHTML = originalBtnText;
                         btn.disabled = false;
@@ -979,13 +1027,12 @@
         // Delete item
         async function deleteItem(id) {
             if (!confirm('هل أنت متأكد من الحذف؟')) return;
-
             try {
                 await db.collection('portfolio_items').doc(id).delete();
                 showSuccess();
                 loadContent();
             } catch (error) {
-                console.error('Error deleting item:', error);
+                console.error('Error deleting:', error);
                 alert('حدث خطأ في الحذف');
             }
         }
@@ -993,8 +1040,7 @@
         // Show success message
         function showSuccess(customMsg) {
             const msg = document.getElementById('success-msg');
-            if (customMsg) msg.textContent = customMsg;
-            else msg.textContent = 'تمت العملية بنجاح!';
+            msg.textContent = customMsg || 'تمت العملية بنجاح!';
             msg.style.display = 'block';
             setTimeout(() => msg.style.display = 'none', 3000);
         }
@@ -1002,35 +1048,28 @@
         // Logout
         function logout() {
             localStorage.removeItem('isAdmin');
-            auth.signOut().then(() => {
-                window.location.href = 'login.html';
-            });
+            auth.signOut().then(() => { window.location.href = 'login.html'; });
         }
 
-        // Image preview function
+        // Image preview
         function previewImage(input) {
             const area = input.closest('.file-upload-area');
             const preview = area.querySelector('.image-preview');
             const fileNameDiv = area.querySelector('.file-name');
-
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
-                reader.onload = (e) => {
-                    preview.src = e.target.result;
-                    preview.style.display = 'block';
-                };
+                reader.onload = (e) => { preview.src = e.target.result; preview.style.display = 'block'; };
                 reader.readAsDataURL(input.files[0]);
                 const sizeMB = (input.files[0].size / (1024 * 1024)).toFixed(2);
                 fileNameDiv.textContent = `${input.files[0].name} (${sizeMB} MB)`;
             }
         }
 
-        // Video preview function
+        // Video preview
         function previewVideo(input) {
             const area = input.closest('.file-upload-area');
             const preview = area.querySelector('.video-preview');
             const fileNameDiv = area.querySelector('.file-name');
-
             if (input.files && input.files[0]) {
                 const url = URL.createObjectURL(input.files[0]);
                 preview.src = url;

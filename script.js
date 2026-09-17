@@ -9,27 +9,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // 3. Handle Review Form
     setupReviewForm();
 
-    // 4. Setup YouTube Video Manager (stop other videos when one plays)
-    setTimeout(() => setupVideoManager(), 1000); // Wait for content to load
+    // 4. Setup Video Manager (stop other videos when one plays)
+    setTimeout(() => setupVideoManager(), 1500);
 
     // 5. Setup Slow Smooth Scroll
     setupSlowSmoothScroll();
 });
-
-// Helper function to extract clean 11-char YouTube ID from any format or URL
-function extractYouTubeId(input) {
-    if (!input) return '';
-    const str = String(input).trim();
-    if (/^[a-zA-Z0-9_-]{11}$/.test(str)) {
-        return str;
-    }
-    const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts|live)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
-    const match = str.match(regex);
-    if (match && match[1]) {
-        return match[1];
-    }
-    return str;
-}
 
 async function loadContentFromAPI() {
     try {
@@ -38,7 +23,7 @@ async function loadContentFromAPI() {
             montage: [], reels: [], motionGraphics: [], graphicDesign: [], thumbnails: [], webDesign: []
         };
 
-        // 1. Fetch & Render INSTANTLY from Local Server API (0 Lag, 0 Delay!)
+        // 1. Fetch & Render INSTANTLY from Local Server API
         try {
             const res = await fetch('/api/content');
             if (res.ok) {
@@ -56,13 +41,14 @@ async function loadContentFromAPI() {
             console.log('API fetch error:', e);
         }
 
-        // 2. Asynchronous Background Firestore Sync (Doesn't block page render!)
+        // 2. Asynchronous Background Firestore Sync
         (async () => {
             try {
                 const heroDoc = await db.collection('settings').doc('hero').get();
                 if (heroDoc.exists && heroDoc.data()) {
                     const hData = heroDoc.data();
-                    const newHero = hData.youtubeId || hData.videoUrl || hData.url || '';
+                    // Support both new videoUrl and legacy youtubeId
+                    const newHero = hData.videoUrl || hData.youtubeId || hData.url || '';
                     if (newHero && newHero !== heroVideo) {
                         heroVideo = newHero;
                         renderHeroVideo(heroVideo);
@@ -93,7 +79,7 @@ async function loadContentFromAPI() {
     }
 }
 
-// Render Hero Video
+// Render Hero Video - AUTOPLAY, LOOP, MUTED
 function renderHeroVideo(heroVideo) {
     const heroVideoPlayer = document.getElementById('hero-video-player');
     if (!heroVideoPlayer) return;
@@ -102,29 +88,16 @@ function renderHeroVideo(heroVideo) {
         return;
     }
 
-    if (heroVideo.startsWith('/uploads/') || heroVideo.endsWith('.mp4') || heroVideo.includes('cloudinary.com')) {
-        heroVideoPlayer.innerHTML = `
-            <video id="hero-vid" autoplay loop muted playsinline controls>
-                <source src="${heroVideo}" type="video/mp4">
-                المتصفح لا يدعم تشغيل الفيديو
-            </video>
-        `;
-        const heroVid = document.getElementById('hero-vid');
-        if (heroVid) {
-            heroVid.play().catch(e => console.log('Autoplay handled:', e));
-        }
-    } else {
-        const yId = extractYouTubeId(heroVideo);
-        if (yId) {
-            heroVideoPlayer.innerHTML = `
-                <iframe id="hero-yt" 
-                    src="https://www.youtube.com/embed/${yId}?autoplay=1&mute=1&loop=1&playlist=${yId}&controls=1&rel=0&enablejsapi=1"
-                    frameborder="0" 
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                    allowfullscreen>
-                </iframe>
-            `;
-        }
+    // Direct video file (Firebase Storage URL, local upload, or Cloudinary)
+    heroVideoPlayer.innerHTML = `
+        <video id="hero-vid" autoplay loop muted playsinline>
+            <source src="${heroVideo}" type="video/mp4">
+            المتصفح لا يدعم تشغيل الفيديو
+        </video>
+    `;
+    const heroVid = document.getElementById('hero-vid');
+    if (heroVid) {
+        heroVid.play().catch(e => console.log('Autoplay handled:', e));
     }
 }
 
@@ -139,12 +112,11 @@ function renderAllCategories(data) {
         });
     });
 
-    // Helper renderer for video cards
+    // Helper renderer for video cards - click to play (not autoplay)
     function renderVideoCardHtml(item, cardClass, aspectClass, idPrefix, index) {
-        const rawUrl = item.videoUrl || item.youtubeId || item.url || '';
-        const yId = extractYouTubeId(rawUrl || item.youtubeId);
+        const rawUrl = item.videoUrl || '';
 
-        if (rawUrl.startsWith('/uploads/') || rawUrl.endsWith('.mp4') || rawUrl.includes('cloudinary.com')) {
+        if (rawUrl) {
             return `
                 <div class="card ${cardClass}">
                     <div class="card-video ${aspectClass}">
@@ -152,18 +124,6 @@ function renderAllCategories(data) {
                             <source src="${rawUrl}" type="video/mp4">
                             المتصفح لا يدعم تشغيل الفيديو
                         </video>
-                    </div>
-                    <div class="motion-card-title">${item.title || ''}</div>
-                </div>
-            `;
-        } else if (yId) {
-            return `
-                <div class="card ${cardClass}">
-                    <div class="card-video ${aspectClass}">
-                        <iframe id="${idPrefix}-${index}" src="https://www.youtube.com/embed/${yId}?enablejsapi=1&rel=0"
-                            title="${item.title || ''}" frameborder="0"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowfullscreen></iframe>
                     </div>
                     <div class="motion-card-title">${item.title || ''}</div>
                 </div>
@@ -176,7 +136,7 @@ function renderAllCategories(data) {
     const montageContainer = document.getElementById('montage-container');
     if (montageContainer) {
         montageContainer.innerHTML = data.montage.map((item, i) =>
-            renderVideoCardHtml(item, 'motion-card montage-card', 'card-video-landscape', 'yt-montage', i)
+            renderVideoCardHtml(item, 'motion-card montage-card', 'card-video-landscape', 'vid-montage', i)
         ).join('');
     }
 
@@ -184,7 +144,7 @@ function renderAllCategories(data) {
     const reelsContainer = document.getElementById('reels-container');
     if (reelsContainer) {
         reelsContainer.innerHTML = data.reels.map((item, i) =>
-            renderVideoCardHtml(item, 'reel-card', 'card-video-portrait', 'yt-reel', i)
+            renderVideoCardHtml(item, 'reel-card', 'card-video-portrait', 'vid-reel', i)
         ).join('');
     }
 
@@ -192,7 +152,7 @@ function renderAllCategories(data) {
     const motionContainer = document.getElementById('motion-container');
     if (motionContainer) {
         motionContainer.innerHTML = data.motionGraphics.map((item, i) =>
-            renderVideoCardHtml(item, 'motion-card', 'card-video-landscape', 'yt-video', i)
+            renderVideoCardHtml(item, 'motion-card', 'card-video-landscape', 'vid-motion', i)
         ).join('');
     }
 
@@ -230,6 +190,9 @@ function renderAllCategories(data) {
 
     // Setup all carousel navigations
     setupAllCarousels();
+
+    // Re-setup video manager for new videos
+    setTimeout(() => setupVideoManager(), 500);
 }
 
 // Setup all Carousel Navigations
@@ -298,14 +261,11 @@ function setupReviewForm() {
     if (form) {
         form.addEventListener('submit', (e) => {
             e.preventDefault();
-            // In a real app, this would send data to a server.
-            // Here we just simulate success.
             const nameDisplay = document.getElementById('user-name-display');
             const name = nameDisplay ? nameDisplay.innerText : "زائر";
 
             alert(`شكراً لك يا ${name} !تم إرسال تعليقك وسيظهر بعد المراجعة.`);
             form.reset();
-            // Restore view
             document.getElementById('review-auth-section').style.display = 'block';
             document.getElementById('review-form-container').classList.add('hidden');
         });
@@ -314,20 +274,15 @@ function setupReviewForm() {
 
 // Simulate Google Login
 function simulateGoogleLogin() {
-    // Hide Auth Button
     const authSection = document.getElementById('review-auth-section');
     authSection.style.display = 'none';
 
-    // Show Form
     const formContainer = document.getElementById('review-form-container');
     formContainer.classList.remove('hidden');
-
-    // Force Flex because CSS might override
     formContainer.style.display = 'flex';
 
-    // Set Mock User Data
     const mockUser = {
-        name: "زائر (تجريبي)", // This would come from Google API in real app
+        name: "زائر (تجريبي)",
         avatar: "https://ui-avatars.com/api/?name=Visitor&background=random"
     };
 
@@ -335,62 +290,20 @@ function simulateGoogleLogin() {
     document.getElementById('user-avatar').src = mockUser.avatar;
 }
 
-// Video Manager - Stop other videos when one plays (supports both HTML5 video and YouTube iframes)
+// Video Manager - Stop other videos when one plays (HTML5 video only, no YouTube iframes)
 function setupVideoManager() {
-    // HTML5 Video elements
-    const videos = document.querySelectorAll('.card-video video');
-    // YouTube iframes (for backwards compatibility with old data)
-    const iframes = document.querySelectorAll('iframe[src*="youtube"]');
-
-    // Function to pause a YouTube iframe
-    function pauseYouTube(iframe) {
-        iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
-    }
-
-    // Function to pause all media except one
-    function pauseAllExcept(currentElement) {
-        videos.forEach(video => {
-            if (video !== currentElement) {
-                video.pause();
-            }
-        });
-        iframes.forEach(iframe => {
-            if (iframe !== currentElement) {
-                pauseYouTube(iframe);
-            }
-        });
-    }
-
-    // HTML5 video play handlers
-    videos.forEach(video => {
+    const allVideos = document.querySelectorAll('.card-video video');
+    
+    // When any video plays, pause all others (except hero video)
+    allVideos.forEach(video => {
         video.addEventListener('play', function () {
-            pauseAllExcept(video);
-        });
-    });
-
-    // YouTube iframe handlers (backwards compatibility)
-    if (iframes.length > 0) {
-        window.addEventListener('message', function (event) {
-            if (event.origin === 'https://www.youtube.com') {
-                try {
-                    const data = JSON.parse(event.data);
-                    if (data.event === 'onStateChange' && data.info === 1) {
-                        iframes.forEach(iframe => {
-                            if (iframe.contentWindow === event.source) {
-                                pauseAllExcept(iframe);
-                            }
-                        });
-                    }
-                } catch (e) { }
-            }
-        });
-
-        iframes.forEach(iframe => {
-            iframe.addEventListener('load', function () {
-                iframe.contentWindow.postMessage('{"event":"listening"}', '*');
+            allVideos.forEach(otherVideo => {
+                if (otherVideo !== video) {
+                    otherVideo.pause();
+                }
             });
         });
-    }
+    });
 }
 
 // Slow Smooth Scroll for anchor links
