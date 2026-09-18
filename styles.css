@@ -151,14 +151,15 @@ ul {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 3rem;
+    gap: 2.5rem;
 }
 
 @media (min-width: 768px) {
     .hero-container {
         flex-direction: row;
         justify-content: space-between;
-        gap: 4rem;
+        align-items: center;
+        gap: 3rem;
     }
 }
 
@@ -293,46 +294,52 @@ ul {
     }
 }
 
-/* Hero Video (Intro Video ONLY) - Square & Large Frame */
+/* Hero Video */
 .hero-video {
-    flex-shrink: 0;
+    flex: 1.2;
     display: flex;
     flex-direction: column;
     align-items: center;
     width: 100%;
-    max-width: 360px;
+}
+
+.video-wrapper {
+    width: 100%;
+    max-width: 600px;
+    aspect-ratio: 16/9;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(251, 191, 36, 0.3), 0 0 0 3px var(--accent-color);
+    background: #111;
+    position: relative;
 }
 
 @media (min-width: 768px) {
-    .hero-video {
-        max-width: 550px; /* Big & clear frame */
+    .video-wrapper {
+        max-width: 700px;
+        min-height: 380px;
     }
 }
 
-.hero-video-wrapper {
-    width: 100%;
-    aspect-ratio: 1 / 1 !important; /* Square format 1:1 */
-    border-radius: 28px;
-    overflow: hidden;
-    box-shadow: 0 20px 60px rgba(251, 191, 36, 0.35), 0 0 0 3px var(--accent-color);
-    background: #000;
-    position: relative;
-    border: 3px solid var(--accent-color);
+@media (min-width: 1024px) {
+    .video-wrapper {
+        max-width: 750px;
+        min-height: 420px;
+    }
 }
 
-.hero-video-wrapper video {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: cover !important; /* Fills square frame perfectly without empty space */
+.video-wrapper iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+.video-wrapper video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
     border: none;
     cursor: pointer;
-    display: block;
-}
-
-.hero-video-wrapper iframe {
-    width: 100% !important;
-    height: 100% !important;
-    border: none;
 }
 
 .hero-controls {
