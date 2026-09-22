@@ -302,9 +302,9 @@ ul {
 }
 
 .video-wrapper {
-    width: 90vw;
-    max-width: 600px;
-    aspect-ratio: 1/1;
+    width: 85vw;
+    max-width: 440px;
+    aspect-ratio: 1 / 1;
     border-radius: 24px;
     overflow: hidden;
     box-shadow: 0 20px 60px rgba(251, 191, 36, 0.3), 0 0 0 3px var(--accent-color);
@@ -314,8 +314,8 @@ ul {
 
 @media (min-width: 768px) {
     .video-wrapper {
-        width: 600px;
-        max-width: 600px;
+        width: 440px;
+        max-width: 440px;
     }
 }
 
