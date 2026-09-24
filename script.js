@@ -78,7 +78,7 @@ async function loadContentFromAPI() {
     }
 }
 
-// Render Hero Video - AUTOPLAY, LOOP, MUTED
+// Render Hero Video - AUTOPLAY, LOOP, MUTED with Audio Controls
 function renderHeroVideo(heroVideo) {
     const heroVideoPlayer = document.getElementById('hero-video-player');
     if (!heroVideoPlayer) return;
@@ -87,16 +87,54 @@ function renderHeroVideo(heroVideo) {
         return;
     }
 
-    // Direct video file (Firebase Storage URL, local upload, or Cloudinary)
     heroVideoPlayer.innerHTML = `
         <video id="hero-vid" autoplay loop muted playsinline>
             <source src="${heroVideo}" type="video/mp4">
             المتصفح لا يدعم تشغيل الفيديو
         </video>
+        <div class="hero-controls">
+            <button id="hero-play-btn" title="تشغيل / إيقاف مؤقت">
+                <i class="fa-solid fa-pause"></i>
+            </button>
+            <button id="hero-mute-btn" title="تشغيل الصوت" class="sound-pulse-btn">
+                <i class="fa-solid fa-volume-xmark"></i> <span style="font-size: 0.85rem; margin-right: 5px; font-weight: 700;">تشغيل الصوت</span>
+            </button>
+        </div>
     `;
+
     const heroVid = document.getElementById('hero-vid');
+    const playBtn = document.getElementById('hero-play-btn');
+    const muteBtn = document.getElementById('hero-mute-btn');
+
     if (heroVid) {
         heroVid.play().catch(e => console.log('Autoplay handled:', e));
+
+        // Toggle Play / Pause
+        const togglePlay = () => {
+            if (heroVid.paused) {
+                heroVid.play();
+                if (playBtn) playBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+            } else {
+                heroVid.pause();
+                if (playBtn) playBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+            }
+        };
+
+        if (playBtn) playBtn.addEventListener('click', togglePlay);
+
+        // Toggle Mute / Unmute Audio
+        if (muteBtn) {
+            muteBtn.addEventListener('click', () => {
+                heroVid.muted = !heroVid.muted;
+                if (heroVid.muted) {
+                    muteBtn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i> <span style="font-size: 0.85rem; margin-right: 5px; font-weight: 700;">تشغيل الصوت</span>';
+                    muteBtn.classList.add('sound-pulse-btn');
+                } else {
+                    muteBtn.innerHTML = '<i class="fa-solid fa-volume-high"></i> <span style="font-size: 0.85rem; margin-right: 5px; font-weight: 700;">كتم الصوت</span>';
+                    muteBtn.classList.remove('sound-pulse-btn');
+                }
+            });
+        }
     }
 }
 

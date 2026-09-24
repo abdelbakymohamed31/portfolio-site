@@ -339,29 +339,49 @@ ul {
     left: 50%;
     transform: translateX(-50%);
     display: flex;
-    gap: 0.5rem;
-    z-index: 10;
+    gap: 0.75rem;
+    z-index: 20;
+    align-items: center;
 }
 
 .hero-controls button {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: rgba(0, 0, 0, 0.6);
+    height: 42px;
+    padding: 0 16px;
+    border-radius: 25px;
+    background: rgba(0, 0, 0, 0.8);
     color: #fbbf24;
-    border: 2px solid rgba(251, 191, 36, 0.5);
+    border: 2px solid #fbbf24;
     cursor: pointer;
-    font-size: 1rem;
+    font-size: 0.95rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s;
+    transition: all 0.3s ease;
     backdrop-filter: blur(5px);
+    font-family: inherit;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
 }
 
 .hero-controls button:hover {
-    background: rgba(251, 191, 36, 0.3);
-    border-color: #fbbf24;
+    background: #fbbf24;
+    color: #000;
+    transform: scale(1.05);
+}
+
+.sound-pulse-btn {
+    animation: soundPulse 1.8s infinite;
+}
+
+@keyframes soundPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.8);
+    }
+    70% {
+        box-shadow: 0 0 0 14px rgba(251, 191, 36, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(251, 191, 36, 0);
+    }
 }
 
 .video-label {
