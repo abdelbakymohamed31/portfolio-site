@@ -664,8 +664,93 @@
             }
         }
 
-        // Upload video file to Firebase Storage with progress tracking
+        // Fast Unstoppable Video Uploader (Cloudinary + Firebase Storage Fallback)
         async function uploadVideoToStorage(file, progressBoxId) {
+            // Attempt 1: High-Speed Direct Cloudinary Video Upload
+            try {
+                return await uploadVideoToCloudinary(file, progressBoxId);
+            } catch (cErr) {
+                console.warn('Cloudinary video upload note, falling back to Firebase Storage:', cErr);
+            }
+
+            // Attempt 2: Firebase Storage Fallback
+            return await uploadVideoToFirebase(file, progressBoxId);
+        }
+
+        // Cloudinary Video Upload with Real-time XHR Progress
+        function uploadVideoToCloudinary(file, progressBoxId) {
+            return new Promise((resolve, reject) => {
+                const box = document.getElementById(progressBoxId);
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('upload_preset', 'lg5xqvab');
+
+                const fill = box ? box.querySelector('.progress-bar-fill') : null;
+                const percentText = box ? box.querySelector('.progress-percentage') : null;
+                const detailsText = box ? box.querySelector('.progress-details-mb') : null;
+                const statusText = box ? box.querySelector('.progress-status-text') : null;
+
+                if (box) {
+                    box.style.display = 'block';
+                    if (fill) fill.style.width = '0%';
+                    if (percentText) percentText.textContent = '0%';
+                    if (statusText) {
+                        statusText.textContent = 'جاري البدء بالرفع... ⌛';
+                        statusText.style.color = '#fbbf24';
+                    }
+                    const totalMB = (file.size / (1024 * 1024)).toFixed(2);
+                    if (detailsText) detailsText.textContent = `0 MB من ${totalMB} MB`;
+                }
+
+                const xhr = new XMLHttpRequest();
+                xhr.upload.onprogress = (e) => {
+                    if (e.lengthComputable && box) {
+                        const percent = Math.round((e.loaded / e.total) * 100);
+                        const loadedMB = (e.loaded / (1024 * 1024)).toFixed(2);
+                        const totalSizeMB = (e.total / (1024 * 1024)).toFixed(2);
+                        if (fill) fill.style.width = percent + '%';
+                        if (percentText) percentText.textContent = percent + '%';
+                        if (detailsText) detailsText.textContent = `${loadedMB} MB من ${totalSizeMB} MB`;
+                        if (statusText) {
+                            if (percent === 100) {
+                                statusText.textContent = 'اكتمل الرفع 100% - جاري التجهيز... ⏳';
+                                statusText.style.color = '#fbbf24';
+                            } else {
+                                statusText.textContent = `جاري الرفع... (${percent}%) ⌛`;
+                            }
+                        }
+                    }
+                };
+
+                xhr.onload = () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        try {
+                            const data = JSON.parse(xhr.responseText);
+                            const videoUrl = data.secure_url || data.url;
+                            if (videoUrl) {
+                                if (fill) fill.style.width = '100%';
+                                if (percentText) percentText.textContent = '100%';
+                                if (statusText) {
+                                    statusText.textContent = 'تم التحميل بنجاح! ✔️';
+                                    statusText.style.color = '#10b981';
+                                }
+                                setTimeout(() => { if (box) box.style.display = 'none'; }, 2500);
+                                resolve(videoUrl);
+                                return;
+                            }
+                        } catch (e) {}
+                    }
+                    reject(new Error('فشل الرفع السريع'));
+                };
+
+                xhr.onerror = () => reject(new Error('خطأ شبكة'));
+                xhr.open('POST', 'https://api.cloudinary.com/v1_1/pqr9gfxr/video/upload', true);
+                xhr.send(formData);
+            });
+        }
+
+        // Firebase Storage Video Upload Fallback
+        async function uploadVideoToFirebase(file, progressBoxId) {
             await ensureFirebaseAuth();
             return new Promise((resolve, reject) => {
                 const box = document.getElementById(progressBoxId);
@@ -679,40 +764,29 @@
                     const detailsText = box.querySelector('.progress-details-mb');
                     const statusText = box.querySelector('.progress-status-text');
                     box.style.display = 'block';
-                    fill.style.width = '0%';
-                    percentText.textContent = '0%';
-                    statusText.textContent = 'جاري البدء بالرفع... ⌛';
-                    statusText.style.color = '#fbbf24';
-                    const totalMB = (file.size / (1024 * 1024)).toFixed(2);
-                    detailsText.textContent = `0 MB من ${totalMB} MB`;
 
                     uploadTask.on('state_changed',
                         (snapshot) => {
                             const percent = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
                             const loadedMB = (snapshot.bytesTransferred / (1024 * 1024)).toFixed(2);
                             const totalSizeMB = (snapshot.totalBytes / (1024 * 1024)).toFixed(2);
-                            fill.style.width = percent + '%';
-                            percentText.textContent = percent + '%';
-                            detailsText.textContent = `${loadedMB} MB من ${totalSizeMB} MB`;
-                            if (percent === 100) {
-                                statusText.textContent = 'اكتمل الرفع 100% - جاري الحفظ... ⏳';
-                                statusText.style.color = '#fbbf24';
-                            } else {
-                                statusText.textContent = `جاري الرفع... (${percent}%) ⌛`;
+                            if (fill) fill.style.width = percent + '%';
+                            if (percentText) percentText.textContent = percent + '%';
+                            if (detailsText) detailsText.textContent = `${loadedMB} MB من ${totalSizeMB} MB`;
+                            if (statusText) {
+                                statusText.textContent = percent === 100 ? 'اكتمل الرفع 100% - جاري الحفظ... ⏳' : `جاري الرفع... (${percent}%) ⌛`;
                             }
                         },
-                        (error) => {
-                            statusText.textContent = 'حدث خطأ أثناء الرفع ❌';
-                            statusText.style.color = '#ef4444';
-                            reject(error);
-                        },
+                        (error) => reject(error),
                         async () => {
                             const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
-                            fill.style.width = '100%';
-                            percentText.textContent = '100%';
-                            statusText.textContent = 'تم التحميل بنجاح! ✔️';
-                            statusText.style.color = '#10b981';
-                            setTimeout(() => { box.style.display = 'none'; }, 2500);
+                            if (fill) fill.style.width = '100%';
+                            if (percentText) percentText.textContent = '100%';
+                            if (statusText) {
+                                statusText.textContent = 'تم التحميل بنجاح! ✔️';
+                                statusText.style.color = '#10b981';
+                            }
+                            setTimeout(() => { if (box) box.style.display = 'none'; }, 2500);
                             resolve(downloadURL);
                         }
                     );
