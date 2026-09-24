@@ -42,7 +42,7 @@ async function loadContentFromAPI() {
         }
 
         // 2. Real-Time Instant Firestore Synchronization (onSnapshot)
-        if (typeof db !== 'undefined') {
+        if (typeof db !== 'undefined' && db) {
             // Real-time listener for Hero Video
             db.collection('settings').doc('hero').onSnapshot((heroDoc) => {
                 if (heroDoc.exists && heroDoc.data()) {

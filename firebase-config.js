@@ -14,7 +14,7 @@ if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 
-// تصدير الأدوات للاستخدام في الصفحات الأخرى
-const auth = firebase.auth();
-const db = firebase.firestore();
-const storage = firebase.storage();
+// تصدير الأدوات للاستخدام في الصفحات الأخرى بأمان
+const auth = (typeof firebase !== 'undefined' && typeof firebase.auth === 'function') ? firebase.auth() : null;
+const db = (typeof firebase !== 'undefined' && typeof firebase.firestore === 'function') ? firebase.firestore() : null;
+const storage = (typeof firebase !== 'undefined' && typeof firebase.storage === 'function') ? firebase.storage() : null;
