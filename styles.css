@@ -345,20 +345,20 @@ ul {
 }
 
 .hero-controls button {
-    height: 42px;
-    padding: 0 16px;
-    border-radius: 25px;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 50%;
     background: rgba(0, 0, 0, 0.8);
     color: #fbbf24;
     border: 2px solid #fbbf24;
     cursor: pointer;
-    font-size: 0.95rem;
+    font-size: 1.1rem;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.3s ease;
     backdrop-filter: blur(5px);
-    font-family: inherit;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
 }
 

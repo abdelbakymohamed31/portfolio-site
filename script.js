@@ -78,7 +78,7 @@ async function loadContentFromAPI() {
     }
 }
 
-// Render Hero Video - AUTOPLAY, LOOP, MUTED with Audio Controls
+// Render Hero Video - WITH AUDIO BY DEFAULT & CLEAN ICON-ONLY CONTROLS
 function renderHeroVideo(heroVideo) {
     const heroVideoPlayer = document.getElementById('hero-video-player');
     if (!heroVideoPlayer) return;
@@ -88,7 +88,7 @@ function renderHeroVideo(heroVideo) {
     }
 
     heroVideoPlayer.innerHTML = `
-        <video id="hero-vid" autoplay loop muted playsinline>
+        <video id="hero-vid" autoplay loop playsinline>
             <source src="${heroVideo}" type="video/mp4">
             المتصفح لا يدعم تشغيل الفيديو
         </video>
@@ -96,8 +96,8 @@ function renderHeroVideo(heroVideo) {
             <button id="hero-play-btn" title="تشغيل / إيقاف مؤقت">
                 <i class="fa-solid fa-pause"></i>
             </button>
-            <button id="hero-mute-btn" title="تشغيل الصوت" class="sound-pulse-btn">
-                <i class="fa-solid fa-volume-xmark"></i> <span style="font-size: 0.85rem; margin-right: 5px; font-weight: 700;">تشغيل الصوت</span>
+            <button id="hero-mute-btn" title="كتم الصوت / تشغيل الصوت">
+                <i class="fa-solid fa-volume-high"></i>
             </button>
         </div>
     `;
@@ -107,7 +107,26 @@ function renderHeroVideo(heroVideo) {
     const muteBtn = document.getElementById('hero-mute-btn');
 
     if (heroVid) {
-        heroVid.play().catch(e => console.log('Autoplay handled:', e));
+        // Unmute by default
+        heroVid.muted = false;
+
+        // Try playing unmuted
+        heroVid.play().catch(e => {
+            console.log('Unmuted autoplay prevented by browser, muting temporarily until interaction:', e);
+            heroVid.muted = true;
+            if (muteBtn) muteBtn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i>';
+            heroVid.play().catch(err => console.log('Autoplay play error:', err));
+
+            // Unmute automatically on first click anywhere on page
+            const enableAudioOnUserAction = () => {
+                heroVid.muted = false;
+                if (muteBtn) muteBtn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+                document.removeEventListener('click', enableAudioOnUserAction);
+                document.removeEventListener('touchstart', enableAudioOnUserAction);
+            };
+            document.addEventListener('click', enableAudioOnUserAction, { once: true });
+            document.addEventListener('touchstart', enableAudioOnUserAction, { once: true });
+        });
 
         // Toggle Play / Pause
         const togglePlay = () => {
@@ -122,16 +141,14 @@ function renderHeroVideo(heroVideo) {
 
         if (playBtn) playBtn.addEventListener('click', togglePlay);
 
-        // Toggle Mute / Unmute Audio
+        // Toggle Mute / Unmute Audio (Clean Icons)
         if (muteBtn) {
             muteBtn.addEventListener('click', () => {
                 heroVid.muted = !heroVid.muted;
                 if (heroVid.muted) {
-                    muteBtn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i> <span style="font-size: 0.85rem; margin-right: 5px; font-weight: 700;">تشغيل الصوت</span>';
-                    muteBtn.classList.add('sound-pulse-btn');
+                    muteBtn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i>';
                 } else {
-                    muteBtn.innerHTML = '<i class="fa-solid fa-volume-high"></i> <span style="font-size: 0.85rem; margin-right: 5px; font-weight: 700;">كتم الصوت</span>';
-                    muteBtn.classList.remove('sound-pulse-btn');
+                    muteBtn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
                 }
             });
         }
