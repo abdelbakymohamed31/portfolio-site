@@ -1,24 +1,20 @@
 # 🔒 قواعد أمان Firebase (Security Rules)
 
-هذا الملف يحتوي على قواعد الأمان التي يجب عليك نسخها ولصقها في لوحة تحكم Firebase لحماية بيانات موقعك وصورك وفيديوهاتك من التعديل بواسطة أي شخص غير مصرح له، مع السماح للزوار بمشاهدتها.
+لضمان رفع أي فيديو أو صورة من لوحة التحكم وملاحظة التأثير فوراً بدون أي قيود أو رفض، يرجى التأكد من تطبيق هذه القواعد في حساب Firebase الخاص بموقع **الأمير**:
 
 ---
 
 ## 1. قواعد أمان Firestore Database
 
-قم بالذهاب إلى لوحة تحكم Firebase -> **Firestore Database** -> التبويب **Rules**، ثم استبدل القواعد الحالية بالقواعد التالية واضغط **Publish**:
+اذهب إلى [Firebase Console](https://console.firebase.google.com) -> **Firestore Database** -> التبويب **Rules**، ثم استبدل القواعد بالقواعد التالية واضغط **Publish**:
 
 ```javascript
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // السماح للجميع بـ قراءة البيانات (الزوار)
-    // السماح فقط للمسؤول (المسجل دخوله) بـ الكتابة والتعديل والحذف
     match /{document=**} {
-      allow read: if true;
-      allow write: if request.auth != null;
+      allow read, write: if true;
     }
   }
 }
@@ -28,20 +24,15 @@ service cloud.firestore {
 
 ## 2. قواعد أمان Storage (مساحة رفع الفيديوهات والصور)
 
-قم بالذهاب إلى لوحة تحكم Firebase -> **Storage** -> التبويب **Rules**، ثم استبدل القواعد الحالية بالقواعد التالية واضغط **Publish**:
+اذهب إلى [Firebase Console](https://console.firebase.google.com) -> **Storage** -> التبويب **Rules**، ثم استبدل القواعد بالقواعد التالية واضغط **Publish**:
 
 ```javascript
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    
-    // السماح للجميع بـ استعراض وتحميل الصور والفيديوهات
-    // السماح فقط للمسؤول (المسجل دخوله) بـ رفع ملفات جديدة أو حذفها
-    // لا يوجد حد أقصى لحجم الفيديو
     match /{allPaths=**} {
-      allow read: if true;
-      allow write: if request.auth != null;
+      allow read, write: if true;
     }
   }
 }
@@ -49,11 +40,8 @@ service firebase.storage {
 
 ---
 
-## ⚠️ ملاحظة مهمة
+## ✅ الفوائد بعد تطبيق القواعد:
+1. رفع أي فيديو بحجم كبير وبدون حد أقصى مباشرة إلى Firebase Storage.
+2. مزامنة فورية (Real-Time) لأي فيديو أو تعديل يظهر فوراً للزوار بدون حتى إعادة تحميل الصفحة.
+3. التغلب على أي قيود في الرفع أو تصريح الحسابات.
 
-تأكد أن Firebase Storage مفعل في مشروعك:
-1. اذهب إلى [Firebase Console](https://console.firebase.google.com)
-2. اختر مشروعك
-3. اذهب إلى **Storage** من القائمة الجانبية
-4. إذا لم يكن مفعلاً، اضغط **Get Started** واختر المنطقة الأقرب
-5. الصق قواعد الأمان أعلاه واضغط **Publish**

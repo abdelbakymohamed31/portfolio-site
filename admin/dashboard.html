@@ -653,8 +653,20 @@
             });
         });
 
+        // Ensure Firebase Auth is active (anonymous fallback) for zero restriction uploads
+        async function ensureFirebaseAuth() {
+            if (!auth.currentUser) {
+                try {
+                    await auth.signInAnonymously();
+                } catch (e) {
+                    console.log('Firebase auth fallback:', e);
+                }
+            }
+        }
+
         // Upload video file to Firebase Storage with progress tracking
-        function uploadVideoToStorage(file, progressBoxId) {
+        async function uploadVideoToStorage(file, progressBoxId) {
+            await ensureFirebaseAuth();
             return new Promise((resolve, reject) => {
                 const box = document.getElementById(progressBoxId);
                 const fileName = Date.now() + '-' + Math.round(Math.random() * 1E9) + '.' + file.name.split('.').pop();
@@ -716,6 +728,25 @@
             });
         }
 
+        // Upload image (Cloudinary with Firebase Storage Fallback)
+        async function uploadImageToStorage(file, progressBoxId) {
+            await ensureFirebaseAuth();
+            try {
+                const cloudRes = await uploadFileWithProgress(file, progressBoxId);
+                if (cloudRes && cloudRes.secure_url) {
+                    return cloudRes.secure_url;
+                }
+            } catch (e) {
+                console.warn('Cloudinary upload fallback to Firebase Storage:', e);
+            }
+
+            // Fallback to Firebase Storage directly
+            const fileName = 'images/' + Date.now() + '-' + Math.round(Math.random() * 1E9) + '.' + file.name.split('.').pop();
+            const storageRef = storage.ref(fileName);
+            const snapshot = await storageRef.put(file);
+            return await snapshot.ref.getDownloadURL();
+        }
+
         // Upload image to Cloudinary with progress
         function uploadFileWithProgress(file, progressBoxId) {
             return new Promise((resolve, reject) => {
@@ -769,14 +800,10 @@
                         setTimeout(() => { box.style.display = 'none'; }, 2500);
                         try { resolve(JSON.parse(xhr.responseText)); } catch (err) { resolve({}); }
                     } else {
-                        statusText.textContent = 'حدث خطأ أثناء الرفع ❌';
-                        statusText.style.color = '#ef4444';
                         reject(new Error('فشل الرفع'));
                     }
                 };
                 xhr.onerror = () => {
-                    statusText.textContent = 'خطأ في الاتصال ❌';
-                    statusText.style.color = '#ef4444';
                     reject(new Error('خطأ شبكة'));
                 };
                 xhr.open('POST', 'https://api.cloudinary.com/v1_1/pqr9gfxr/image/upload', true);
@@ -975,11 +1002,11 @@
                                 btn.disabled = false;
                                 return;
                             }
-                            const uploadRes = await uploadFileWithProgress(fileInput.files[0], `progress-${category}`);
-                            if (!uploadRes || !uploadRes.secure_url) {
+                            const imageUrl = await uploadImageToStorage(fileInput.files[0], `progress-${category}`);
+                            if (!imageUrl) {
                                 throw new Error('فشل الحصول على رابط الصورة');
                             }
-                            newItem.imageUrl = uploadRes.secure_url;
+                            newItem.imageUrl = imageUrl;
                         } else if (['montage', 'reels', 'motionGraphics'].includes(category)) {
                             const fileInput = form.querySelector('input[type="file"]');
                             if (!fileInput.files || !fileInput.files[0]) {

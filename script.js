@@ -23,7 +23,7 @@ async function loadContentFromAPI() {
             montage: [], reels: [], motionGraphics: [], graphicDesign: [], thumbnails: [], webDesign: []
         };
 
-        // 1. Fetch & Render INSTANTLY from Local Server API
+        // 1. Fetch & Render INSTANTLY from Local Server API if available
         try {
             const res = await fetch('/api/content');
             if (res.ok) {
@@ -38,26 +38,25 @@ async function loadContentFromAPI() {
                 renderAllCategories(data);
             }
         } catch (e) {
-            console.log('API fetch error:', e);
+            console.log('API fetch info:', e);
         }
 
-        // 2. Asynchronous Background Firestore Sync
-        (async () => {
-            try {
-                const heroDoc = await db.collection('settings').doc('hero').get();
+        // 2. Real-Time Instant Firestore Synchronization (onSnapshot)
+        if (typeof db !== 'undefined') {
+            // Real-time listener for Hero Video
+            db.collection('settings').doc('hero').onSnapshot((heroDoc) => {
                 if (heroDoc.exists && heroDoc.data()) {
                     const hData = heroDoc.data();
-                    // Support both new videoUrl and legacy youtubeId
                     const newHero = hData.videoUrl || hData.youtubeId || hData.url || '';
                     if (newHero && newHero !== heroVideo) {
                         heroVideo = newHero;
                         renderHeroVideo(heroVideo);
                     }
                 }
-            } catch (err) {}
+            }, (err) => console.log('Firestore hero listener error:', err));
 
-            try {
-                const snapshot = await db.collection('portfolio_items').get();
+            // Real-time listener for Portfolio Items (Videos, Reels, Designs, etc.)
+            db.collection('portfolio_items').onSnapshot((snapshot) => {
                 if (!snapshot.empty) {
                     const fsData = {
                         montage: [], reels: [], motionGraphics: [], graphicDesign: [], thumbnails: [], webDesign: []
@@ -71,8 +70,8 @@ async function loadContentFromAPI() {
                     });
                     renderAllCategories(fsData);
                 }
-            } catch (err) {}
-        })();
+            }, (err) => console.log('Firestore items listener error:', err));
+        }
 
     } catch (error) {
         console.error('Error loading content:', error);
