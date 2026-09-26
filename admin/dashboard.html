@@ -653,277 +653,237 @@
             });
         });
 
-        // Ensure Firebase Auth is active (auto-creates admin session if required for zero restriction uploads)
+        // ============================================================
+        // 🔐 AUTHENTICATION - Ensure Firebase Auth is always active
+        // ============================================================
+        let authReady = false;
         async function ensureFirebaseAuth() {
-            if (!auth.currentUser) {
-                try {
-                    await auth.signInAnonymously();
-                    return;
-                } catch (e) {
-                    console.log('Anonymous auth note:', e);
-                }
+            if (authReady && auth.currentUser) return;
+            
+            // Method 1: Already signed in
+            if (auth.currentUser) { authReady = true; return; }
 
-                try {
-                    await auth.signInWithEmailAndPassword('alamermostafa9988@gmail.com', 'Mostafa9988@');
-                    return;
-                } catch (e) {
-                    try {
-                        await auth.createUserWithEmailAndPassword('alamermostafa9988@gmail.com', 'Mostafa9988@');
-                        return;
-                    } catch (cErr) {}
-                }
+            // Method 2: Wait for auth state to resolve (may already be signed in)
+            await new Promise(resolve => {
+                const unsub = auth.onAuthStateChanged(user => {
+                    unsub();
+                    resolve(user);
+                });
+            });
+            if (auth.currentUser) { authReady = true; return; }
 
-                try {
-                    await auth.signInWithEmailAndPassword('admin@alamerup.com', 'mustafa2024');
-                    return;
-                } catch (e) {
-                    try {
-                        await auth.createUserWithEmailAndPassword('admin@alamerup.com', 'mustafa2024');
-                        return;
-                    } catch (cErr) {}
+            // Method 3: Try anonymous sign-in
+            try { await auth.signInAnonymously(); authReady = true; return; } catch (e) { console.log('Anon auth:', e.code); }
+
+            // Method 4: Try admin email login
+            const accounts = [
+                { email: 'alamermostafa9988@gmail.com', pass: 'Mostafa9988@' },
+                { email: 'admin@alamerup.com', pass: 'mustafa2024' }
+            ];
+            for (const acc of accounts) {
+                try { await auth.signInWithEmailAndPassword(acc.email, acc.pass); authReady = true; return; } catch (e) {
+                    try { await auth.createUserWithEmailAndPassword(acc.email, acc.pass); authReady = true; return; } catch (e2) {}
                 }
+            }
+            // Even if all auth methods fail, still allow the upload attempt - Storage rules may be open
+            console.warn('⚠️ All auth methods failed. Upload will attempt anyway (rules may be open).');
+        }
+
+        // ============================================================
+        // 📤 PROGRESS UI HELPER
+        // ============================================================
+        function getProgressElements(progressBoxId) {
+            const box = document.getElementById(progressBoxId);
+            if (!box) return null;
+            return {
+                box,
+                fill: box.querySelector('.progress-bar-fill'),
+                percentText: box.querySelector('.progress-percentage'),
+                detailsText: box.querySelector('.progress-details-mb'),
+                statusText: box.querySelector('.progress-status-text')
+            };
+        }
+
+        function showProgress(p, percent, loadedMB, totalMB, statusMsg, statusColor) {
+            if (!p) return;
+            p.box.style.display = 'block';
+            if (p.fill) p.fill.style.width = percent + '%';
+            if (p.percentText) p.percentText.textContent = percent + '%';
+            if (p.detailsText && totalMB !== undefined) p.detailsText.textContent = `${loadedMB} MB من ${totalMB} MB`;
+            if (p.statusText && statusMsg) {
+                p.statusText.textContent = statusMsg;
+                p.statusText.style.color = statusColor || '#fbbf24';
             }
         }
 
-        // Reliable Video Uploader (Primary: Firebase Storage for unlimited size, Fallback: Cloudinary)
+        function hideProgress(p, delay) {
+            if (p && p.box) setTimeout(() => { p.box.style.display = 'none'; }, delay || 2500);
+        }
+
+        // ============================================================
+        // 🎬 VIDEO UPLOAD - Firebase Storage ONLY (NO SIZE LIMIT)
+        // ============================================================
+        // Cloudinary has a 100MB limit for free plans which causes the
+        // exact bug: upload reaches 5% then resets/fails. 
+        // Firebase Storage has NO file size limit on Blaze plan.
+        // We retry up to 3 times with exponential backoff.
+        
         async function uploadVideoToStorage(file, progressBoxId) {
             await ensureFirebaseAuth();
+            const p = getProgressElements(progressBoxId);
+            const totalMB = (file.size / (1024 * 1024)).toFixed(2);
+            const maxRetries = 3;
 
-            // Attempt 1: Firebase Storage (Primary - Unlimited size, Resumable progress)
-            try {
-                return await uploadVideoToFirebase(file, progressBoxId);
-            } catch (fbErr) {
-                console.warn('Firebase Storage upload note, trying Cloudinary fallback:', fbErr);
-            }
+            for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                try {
+                    showProgress(p, 0, '0', totalMB, 
+                        attempt > 1 ? `⏳ محاولة رقم ${attempt} من ${maxRetries}...` : 'جاري البدء بالرفع على Firebase... ⌛', 
+                        '#fbbf24');
 
-            // Attempt 2: Cloudinary Video Upload Fallback
-            try {
-                return await uploadVideoToCloudinary(file, progressBoxId);
-            } catch (cErr) {
-                console.error('All upload attempts failed:', cErr);
-                throw new Error('فشل الرفع عبر جميع الخوادم. يرجى التأكد من تغيير قواعد Firebase Storage إلى allow read, write: if true;');
-            }
-        }
+                    const url = await firebaseStorageUpload(file, p, totalMB);
+                    
+                    // SUCCESS!
+                    showProgress(p, 100, totalMB, totalMB, 'تم التحميل بنجاح! ✅', '#10b981');
+                    hideProgress(p, 3000);
+                    return url;
 
-        // Cloudinary Video Upload with Real-time XHR Progress (For Files < 90 MB)
-        function uploadVideoToCloudinary(file, progressBoxId) {
-            return new Promise((resolve, reject) => {
-                const box = document.getElementById(progressBoxId);
-                const formData = new FormData();
-                formData.append('file', file);
-                formData.append('upload_preset', 'lg5xqvab');
-
-                const fill = box ? box.querySelector('.progress-bar-fill') : null;
-                const percentText = box ? box.querySelector('.progress-percentage') : null;
-                const detailsText = box ? box.querySelector('.progress-details-mb') : null;
-                const statusText = box ? box.querySelector('.progress-status-text') : null;
-
-                if (box) {
-                    box.style.display = 'block';
-                    if (fill) fill.style.width = '0%';
-                    if (percentText) percentText.textContent = '0%';
-                    if (statusText) {
-                        statusText.textContent = 'جاري البدء بالرفع... ⌛';
-                        statusText.style.color = '#fbbf24';
+                } catch (err) {
+                    console.error(`Upload attempt ${attempt} failed:`, err);
+                    
+                    if (attempt < maxRetries) {
+                        const waitSec = attempt * 3; // 3s, 6s
+                        showProgress(p, 0, '0', totalMB, 
+                            `❌ فشلت المحاولة ${attempt}. إعادة المحاولة بعد ${waitSec} ثواني...`, '#ef4444');
+                        await new Promise(r => setTimeout(r, waitSec * 1000));
+                    } else {
+                        // All retries exhausted - show clear error
+                        const errorMsg = getUploadErrorMessage(err);
+                        showProgress(p, 0, '0', totalMB, errorMsg, '#ef4444');
+                        throw new Error(errorMsg);
                     }
-                    const totalMB = (file.size / (1024 * 1024)).toFixed(2);
-                    if (detailsText) detailsText.textContent = `0 MB من ${totalMB} MB`;
                 }
-
-                const xhr = new XMLHttpRequest();
-                xhr.upload.onprogress = (e) => {
-                    if (e.lengthComputable && box) {
-                        const percent = Math.round((e.loaded / e.total) * 100);
-                        const loadedMB = (e.loaded / (1024 * 1024)).toFixed(2);
-                        const totalSizeMB = (e.total / (1024 * 1024)).toFixed(2);
-                        if (fill) fill.style.width = percent + '%';
-                        if (percentText) percentText.textContent = percent + '%';
-                        if (detailsText) detailsText.textContent = `${loadedMB} MB من ${totalSizeMB} MB`;
-                        if (statusText) {
-                            if (percent === 100) {
-                                statusText.textContent = 'اكتمل الرفع 100% - جاري التجهيز... ⏳';
-                                statusText.style.color = '#fbbf24';
-                            } else {
-                                statusText.textContent = `جاري الرفع... (${percent}%) ⌛`;
-                            }
-                        }
-                    }
-                };
-
-                xhr.onload = () => {
-                    if (xhr.status >= 200 && xhr.status < 300) {
-                        try {
-                            const data = JSON.parse(xhr.responseText);
-                            const videoUrl = data.secure_url || data.url;
-                            if (videoUrl) {
-                                if (fill) fill.style.width = '100%';
-                                if (percentText) percentText.textContent = '100%';
-                                if (statusText) {
-                                    statusText.textContent = 'تم التحميل بنجاح! ✔️';
-                                    statusText.style.color = '#10b981';
-                                }
-                                setTimeout(() => { if (box) box.style.display = 'none'; }, 2500);
-                                resolve(videoUrl);
-                                return;
-                            }
-                        } catch (e) {}
-                    }
-                    reject(new Error('فشل الرفع عبر الخادم الأول'));
-                };
-
-                xhr.onerror = () => reject(new Error('خطأ شبكة'));
-                xhr.open('POST', 'https://api.cloudinary.com/v1_1/pqr9gfxr/video/upload', true);
-                xhr.send(formData);
-            });
+            }
         }
 
-        // Firebase Storage Video Upload (Supports Files > 100 MB Without Any Limits)
-        async function uploadVideoToFirebase(file, progressBoxId) {
-            await ensureFirebaseAuth();
+        function getUploadErrorMessage(err) {
+            const code = err.code || '';
+            if (code.includes('unauthorized') || code.includes('permission') || code === 'storage/unauthorized') {
+                return '🔒 مشكلة صلاحيات! افتح Firebase Console → Storage → Rules → غيّر القواعد إلى: allow read, write: if true; ثم اضغط Publish';
+            }
+            if (code.includes('canceled') || code === 'storage/canceled') {
+                return '⛔ تم إلغاء الرفع.';
+            }
+            if (code.includes('retry') || code.includes('unknown') || code === 'storage/retry-limit-exceeded') {
+                return '🌐 مشكلة في الشبكة. تأكد من اتصال الإنترنت وحاول مرة أخرى.';
+            }
+            if (code.includes('quota') || code === 'storage/quota-exceeded') {
+                return '📦 المساحة المجانية في Firebase ممتلئة! يرجى الترقية إلى خطة Blaze.';
+            }
+            return `❌ فشل رفع الفيديو: ${err.message || 'خطأ غير معروف'}. تأكد من صلاحيات Firebase Storage.`;
+        }
+
+        // Core Firebase Storage upload with progress tracking
+        function firebaseStorageUpload(file, p, totalMB) {
             return new Promise((resolve, reject) => {
-                const box = document.getElementById(progressBoxId);
-                const fileName = Date.now() + '-' + Math.round(Math.random() * 1E9) + '.' + file.name.split('.').pop();
+                const ext = file.name.split('.').pop() || 'mp4';
+                const fileName = Date.now() + '-' + Math.round(Math.random() * 1E9) + '.' + ext;
                 const storageRef = storage.ref('videos/' + fileName);
-                const uploadTask = storageRef.put(file);
+                
+                // Set proper content type for the video
+                const metadata = { contentType: file.type || 'video/mp4' };
+                const uploadTask = storageRef.put(file, metadata);
 
-                if (box) {
-                    const fill = box.querySelector('.progress-bar-fill');
-                    const percentText = box.querySelector('.progress-percentage');
-                    const detailsText = box.querySelector('.progress-details-mb');
-                    const statusText = box.querySelector('.progress-status-text');
-                    box.style.display = 'block';
-                    if (fill) fill.style.width = '0%';
-                    if (percentText) percentText.textContent = '0%';
-                    if (statusText) {
-                        statusText.textContent = 'جاري البدء بالرفع... ⌛';
-                        statusText.style.color = '#fbbf24';
+                uploadTask.on('state_changed',
+                    (snapshot) => {
+                        const percent = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+                        const loadedMB = (snapshot.bytesTransferred / (1024 * 1024)).toFixed(2);
+                        const sizeMB = (snapshot.totalBytes / (1024 * 1024)).toFixed(2);
+                        
+                        let statusMsg;
+                        if (percent === 100) {
+                            statusMsg = '✅ اكتمل الرفع 100% - جاري حفظ الرابط... ⏳';
+                        } else if (percent > 90) {
+                            statusMsg = `🏁 شارف على الانتهاء... (${percent}%)`;
+                        } else {
+                            statusMsg = `⬆️ جاري الرفع... (${percent}%)`;
+                        }
+                        showProgress(p, percent, loadedMB, sizeMB, statusMsg, '#fbbf24');
+                    },
+                    (error) => {
+                        reject(error);
+                    },
+                    async () => {
+                        try {
+                            const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
+                            resolve(downloadURL);
+                        } catch (urlErr) {
+                            reject(urlErr);
+                        }
                     }
-                    const totalMB = (file.size / (1024 * 1024)).toFixed(2);
-                    if (detailsText) detailsText.textContent = `0 MB من ${totalMB} MB`;
-
-                    uploadTask.on('state_changed',
-                        (snapshot) => {
-                            const percent = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-                            const loadedMB = (snapshot.bytesTransferred / (1024 * 1024)).toFixed(2);
-                            const totalSizeMB = (snapshot.totalBytes / (1024 * 1024)).toFixed(2);
-                            if (fill) fill.style.width = percent + '%';
-                            if (percentText) percentText.textContent = percent + '%';
-                            if (detailsText) detailsText.textContent = `${loadedMB} MB من ${totalSizeMB} MB`;
-                            if (statusText) {
-                                statusText.textContent = percent === 100 ? 'اكتمل الرفع 100% - جاري الحفظ... ⏳' : `جاري الرفع... (${percent}%) ⌛`;
-                                statusText.style.color = '#fbbf24';
-                            }
-                        },
-                        (error) => {
-                            console.error('Firebase Storage Upload Error:', error);
-                            if (statusText) {
-                                statusText.textContent = 'حدث خطأ في الإذن! يرجى التأكد من صلاحيات Firebase Storage ❌';
-                                statusText.style.color = '#ef4444';
-                            }
-                            reject(error);
-                        },
-                        async () => {
-                            const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
-                            if (fill) fill.style.width = '100%';
-                            if (percentText) percentText.textContent = '100%';
-                            if (statusText) {
-                                statusText.textContent = 'تم التحميل بنجاح! ✔️';
-                                statusText.style.color = '#10b981';
-                            }
-                            setTimeout(() => { if (box) box.style.display = 'none'; }, 2500);
-                            resolve(downloadURL);
-                        }
-                    );
-                } else {
-                    uploadTask.on('state_changed', null,
-                        (error) => reject(error),
-                        async () => {
-                            const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
-                            resolve(downloadURL);
-                        }
-                    );
-                }
+                );
             });
         }
 
-        // Upload image (Cloudinary with Firebase Storage Fallback)
+        // ============================================================
+        // 🖼️ IMAGE UPLOAD - Cloudinary primary, Firebase Storage fallback
+        // ============================================================
         async function uploadImageToStorage(file, progressBoxId) {
             await ensureFirebaseAuth();
+            const p = getProgressElements(progressBoxId);
+
+            // Try Cloudinary first for images (fast CDN, good for images)
             try {
-                const cloudRes = await uploadFileWithProgress(file, progressBoxId);
+                const cloudRes = await uploadImageToCloudinary(file, p);
                 if (cloudRes && cloudRes.secure_url) {
                     return cloudRes.secure_url;
                 }
             } catch (e) {
-                console.warn('Cloudinary upload fallback to Firebase Storage:', e);
+                console.warn('Cloudinary image upload failed, using Firebase Storage:', e);
             }
 
-            // Fallback to Firebase Storage directly
-            const fileName = 'images/' + Date.now() + '-' + Math.round(Math.random() * 1E9) + '.' + file.name.split('.').pop();
+            // Fallback to Firebase Storage
+            showProgress(p, 0, '0', (file.size / (1024 * 1024)).toFixed(2), 'جاري الرفع على Firebase... ⌛', '#fbbf24');
+            const ext = file.name.split('.').pop() || 'jpg';
+            const fileName = 'images/' + Date.now() + '-' + Math.round(Math.random() * 1E9) + '.' + ext;
             const storageRef = storage.ref(fileName);
-            const snapshot = await storageRef.put(file);
-            return await snapshot.ref.getDownloadURL();
+            const metadata = { contentType: file.type || 'image/jpeg' };
+            const snapshot = await storageRef.put(file, metadata);
+            const url = await snapshot.ref.getDownloadURL();
+            showProgress(p, 100, null, null, 'تم رفع الصورة بنجاح! ✅', '#10b981');
+            hideProgress(p, 2000);
+            return url;
         }
 
-        // Upload image to Cloudinary with progress
-        function uploadFileWithProgress(file, progressBoxId) {
+        // Cloudinary Image Upload
+        function uploadImageToCloudinary(file, p) {
             return new Promise((resolve, reject) => {
-                const box = document.getElementById(progressBoxId);
                 const formData = new FormData();
                 formData.append('file', file);
                 formData.append('upload_preset', 'lg5xqvab');
 
-                if (!box) {
-                    fetch('https://api.cloudinary.com/v1_1/pqr9gfxr/image/upload', {
-                        method: 'POST', body: formData
-                    }).then(r => r.json()).then(resolve).catch(reject);
-                    return;
-                }
-
-                const fill = box.querySelector('.progress-bar-fill');
-                const percentText = box.querySelector('.progress-percentage');
-                const detailsText = box.querySelector('.progress-details-mb');
-                const statusText = box.querySelector('.progress-status-text');
-                box.style.display = 'block';
-                fill.style.width = '0%';
-                percentText.textContent = '0%';
-                statusText.textContent = 'جاري البدء بالرفع... ⌛';
-                statusText.style.color = '#fbbf24';
                 const totalMB = (file.size / (1024 * 1024)).toFixed(2);
-                detailsText.textContent = `0 MB من ${totalMB} MB`;
+                showProgress(p, 0, '0', totalMB, 'جاري رفع الصورة... ⌛', '#fbbf24');
 
                 const xhr = new XMLHttpRequest();
                 xhr.upload.onprogress = (e) => {
-                    if (e.lengthComputable) {
+                    if (e.lengthComputable && p) {
                         const percent = Math.round((e.loaded / e.total) * 100);
                         const loadedMB = (e.loaded / (1024 * 1024)).toFixed(2);
-                        const totalSizeMB = (e.total / (1024 * 1024)).toFixed(2);
-                        fill.style.width = percent + '%';
-                        percentText.textContent = percent + '%';
-                        detailsText.textContent = `${loadedMB} MB من ${totalSizeMB} MB`;
-                        if (percent === 100) {
-                            statusText.textContent = 'اكتمل الرفع 100% - جاري التجهيز... ⏳';
-                            statusText.style.color = '#fbbf24';
-                        } else {
-                            statusText.textContent = `جاري الرفع... (${percent}%) ⌛`;
-                        }
+                        const sizeMB = (e.total / (1024 * 1024)).toFixed(2);
+                        showProgress(p, percent, loadedMB, sizeMB, 
+                            percent === 100 ? 'اكتمل الرفع - جاري التجهيز... ⏳' : `جاري الرفع... (${percent}%)`, '#fbbf24');
                     }
                 };
                 xhr.onload = () => {
                     if (xhr.status >= 200 && xhr.status < 300) {
-                        fill.style.width = '100%';
-                        percentText.textContent = '100%';
-                        statusText.textContent = 'تم التحميل بنجاح! ✔️';
-                        statusText.style.color = '#10b981';
-                        setTimeout(() => { box.style.display = 'none'; }, 2500);
+                        showProgress(p, 100, null, null, 'تم رفع الصورة بنجاح! ✅', '#10b981');
+                        hideProgress(p, 2000);
                         try { resolve(JSON.parse(xhr.responseText)); } catch (err) { resolve({}); }
                     } else {
-                        reject(new Error('فشل الرفع'));
+                        reject(new Error('Cloudinary upload failed: ' + xhr.status));
                     }
                 };
-                xhr.onerror = () => {
-                    reject(new Error('خطأ شبكة'));
-                };
+                xhr.onerror = () => reject(new Error('Network error'));
                 xhr.open('POST', 'https://api.cloudinary.com/v1_1/pqr9gfxr/image/upload', true);
                 xhr.send(formData);
             });
