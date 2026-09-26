@@ -653,43 +653,55 @@
             });
         });
 
-        // Ensure Firebase Auth is active (with admin login fallback for zero restriction uploads)
+        // Ensure Firebase Auth is active (auto-creates admin session if required for zero restriction uploads)
         async function ensureFirebaseAuth() {
             if (!auth.currentUser) {
                 try {
                     await auth.signInAnonymously();
+                    return;
                 } catch (e) {
-                    console.log('Anonymous auth not enabled, signing in with admin credentials...', e);
+                    console.log('Anonymous auth note:', e);
+                }
+
+                try {
+                    await auth.signInWithEmailAndPassword('alamermostafa9988@gmail.com', 'Mostafa9988@');
+                    return;
+                } catch (e) {
                     try {
-                        await auth.signInWithEmailAndPassword('alamermostafa9988@gmail.com', 'Mostafa9988@');
-                    } catch (err2) {
-                        try {
-                            await auth.signInWithEmailAndPassword('admin@alamerup.com', 'mustafa2024');
-                        } catch (err3) {
-                            console.log('Admin login fallback note:', err3);
-                        }
-                    }
+                        await auth.createUserWithEmailAndPassword('alamermostafa9988@gmail.com', 'Mostafa9988@');
+                        return;
+                    } catch (cErr) {}
+                }
+
+                try {
+                    await auth.signInWithEmailAndPassword('admin@alamerup.com', 'mustafa2024');
+                    return;
+                } catch (e) {
+                    try {
+                        await auth.createUserWithEmailAndPassword('admin@alamerup.com', 'mustafa2024');
+                        return;
+                    } catch (cErr) {}
                 }
             }
         }
 
-        // Smart Size-Aware Video Uploader (Handles Files > 100 MB seamlessly)
+        // Reliable Video Uploader (Primary: Firebase Storage for unlimited size, Fallback: Cloudinary)
         async function uploadVideoToStorage(file, progressBoxId) {
-            const sizeInMB = file.size / (1024 * 1024);
+            await ensureFirebaseAuth();
 
-            // Cloudinary Free Tier caps video files at 100 MB and rejects them around 5%.
-            // For videos >= 90 MB, bypass Cloudinary to avoid aborts and upload directly to Firebase Storage.
-            if (sizeInMB >= 90) {
-                console.log(`Large video file detected (${sizeInMB.toFixed(1)} MB). Uploading via Firebase Storage directly...`);
+            // Attempt 1: Firebase Storage (Primary - Unlimited size, Resumable progress)
+            try {
                 return await uploadVideoToFirebase(file, progressBoxId);
+            } catch (fbErr) {
+                console.warn('Firebase Storage upload note, trying Cloudinary fallback:', fbErr);
             }
 
-            // For videos under 90 MB, attempt Cloudinary high-speed upload, fallback to Firebase Storage.
+            // Attempt 2: Cloudinary Video Upload Fallback
             try {
                 return await uploadVideoToCloudinary(file, progressBoxId);
             } catch (cErr) {
-                console.warn('Cloudinary upload note, falling back to Firebase Storage:', cErr);
-                return await uploadVideoToFirebase(file, progressBoxId);
+                console.error('All upload attempts failed:', cErr);
+                throw new Error('فشل الرفع عبر جميع الخوادم. يرجى التأكد من تغيير قواعد Firebase Storage إلى allow read, write: if true;');
             }
         }
 
